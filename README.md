@@ -10,6 +10,6 @@ Mapping for Wikidata allows creation of wikidata entries from dicts
 [![License](https://img.shields.io/github/license/WolfgangFahl/py_ez_wikidata.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Docs 
-[Wiki](https://wiki.bitplan.com/index.php/PyCEURmake)
+[Wiki](https://wiki.bitplan.com/index.php/Py_ez_wikidata)
 
 

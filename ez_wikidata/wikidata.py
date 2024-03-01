@@ -17,7 +17,7 @@ from typing import List, Union
 
 import dateutil.parser
 from lodstorage.sparql import SPARQL
-from spreadsheet.version import Version
+from ez_wikidata.version import Version
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
     URL,

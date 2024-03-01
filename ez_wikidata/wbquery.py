@@ -5,11 +5,7 @@ Created on 2022-04-30
 """
 import pprint
 from typing import Dict, List
-
-from lodstorage.lod import LOD
-from spreadsheet.googlesheet import GoogleSheet
-from spreadsheet.wikidata import PropertyMapping, WdDatatype
-
+from ez_wikidata.wikidata import PropertyMapping, WdDatatype
 
 class WikibaseQuery(object):
     """
@@ -237,68 +233,6 @@ SELECT ?{item_varname} ?{item_varname}Label ?{item_varname}Description
         if orderClause is not None:
             sparql += f"\n{orderClause}"
         return sparql
-
-    @classmethod
-    def sparqlOfGoogleSheet(
-        cls,
-        url: str,
-        sheetName: str,
-        entityName: str,
-        pkColumn: str,
-        mappingSheetName: str = "WikidataMapping",
-        lang: str = "en",
-        debug: bool = False,
-    ) -> ("WikibaseQuery", str):
-        """
-        get a sparql query for the given google sheet
-
-        Args:
-            url(str): the url of the sheet
-            sheetName(str): the name of the sheet with the description
-            entityName(str): the name of the entity as defined in the Wikidata mapping
-            pkColumn(str): the column to use as a "primary key"
-            mappingSheetName(str): the name of the sheet with the Wikidata mappings
-            lang(str): the language to use (if any)
-            debug(bool): if True switch on debugging
-
-        Returns:
-            WikibaseQuery
-        """
-        queries = WikibaseQuery.ofGoogleSheet(url, mappingSheetName, debug)
-        gs = GoogleSheet(url)
-        gs.open([sheetName])
-        lod = gs.asListOfDicts(sheetName)
-        lodByPk, _dup = LOD.getLookup(lod, pkColumn)
-        query = queries[entityName]
-        propRow = query.propertiesByColumn[pkColumn]
-        pk = propRow["PropertyName"]
-        pkVarname = propRow["PropVarname"]
-        pkType = propRow["Type"]
-        valuesClause = query.getValuesClause(
-            lodByPk.keys(), propVarname=pkVarname, propType=pkType, lang=lang
-        )
-
-        sparql = query.asSparql(
-            filterClause=valuesClause, orderClause=f"ORDER BY ?{pkVarname}", pk=pk
-        )
-        return query, sparql
-
-    @classmethod
-    def ofGoogleSheet(
-        cls, url: str, sheetName: str = "WikidataMapping", debug: bool = False
-    ) -> Dict[str, "WikibaseQuery"]:
-        """
-        create a dict of wikibaseQueries from the given google sheets row descriptions
-
-        Args:
-            url(str): the url of the sheet
-            sheetName(str): the name of the sheet with the description
-            debug(bool): if True switch on debugging
-        """
-        gs = GoogleSheet(url)
-        gs.open([sheetName])
-        entityMapRows = gs.asListOfDicts(sheetName)
-        return WikibaseQuery.ofMapRows(entityMapRows, debug=debug)
 
     @classmethod
     def ofMapRows(

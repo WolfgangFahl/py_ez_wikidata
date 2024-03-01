@@ -1,0 +1,63 @@
+# see https://flit.pypa.io/en/latest/pyproject_toml.html
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "py_ez_wikidata"
+description = "python wikidata access via dicts"
+keywords = [ "wikidata"]
+home-page = "https://github.com/WolfgangFahl/py_ez_wikidata"
+authors = [
+  {name = "Wolfgang Fahl", email = "wf@WolfgangFahl.com"}
+]
+maintainers = [
+  { name = "Wolfgang Fahl", email = "wf@WolfgangFahl.com" },
+]
+readme = "README.md"
+license = {text = "Apache-2.0"}
+dependencies = [
+	# https://github.com/LeMyst/WikibaseIntegrator
+	"wikibaseintegrator>=0.12.5",
+	# https://pypi.org/project/pylodstorage/
+   	"pylodstorage>=0.8.1"
+]
+
+requires-python = ">=3.9"
+classifiers=[
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: User Interfaces",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License"
+    ]
+dynamic = ["version"]
+[tool.hatch.version]
+path = "ez_wikidata/__init__.py"
+
+[project.urls]
+Home = "https://github.com/WolfgangFahl/py_ez_wikidata"
+Documentation = "https://wiki.bitplan.com/index.php/Py_ez_wikidata"
+Source = "https://github.com/WolfgangFahl/py_ez_wikidata"
+
+[project.optional-dependencies]
+test = [
+  "green",
+]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["ez_wikidata"]
+
+[tool.hatch.build.targets.wheel.sources]
+"ez_wikidata" = "ez_wikidata"
+
+
+[project.scripts]
+ezwd = "ez_wikidata.ezwd_cmd:main"

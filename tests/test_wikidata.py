@@ -3,8 +3,7 @@ import uuid
 from datetime import datetime
 
 from lodstorage.lod import LOD
-from spreadsheet.googlesheet import GoogleSheet
-from spreadsheet.wikidata import (
+from ez_wikidata.wikidata import (
     PropertyMapping,
     UrlReference,
     WdDatatype,
@@ -60,39 +59,7 @@ class TestWikidata(BaseTest):
                     print(actual_qid)
                 self.assertEqual(expected_qid, actual_qid)
 
-    def testAddItem(self):
-        """
-        test the wikidata access
-        """
-        # http://learningwikibase.com/data-import/
-        # https://github.com/SuLab/scheduled-bots/blob/main/scheduled_bots/wikipathways/bot.py
-        debug = self.debug
-        # debug=True
-        url = "https://docs.google.com/spreadsheets/d/1AZ4tji1NDuPZ0gwsAxOADEQ9jz_67yRao2QcCaJQjmk"
-        self.gs = GoogleSheet(url)
-        spreadSheetNames = ["WorldPrayerDays", "Wikidata"]
-        self.gs.open(spreadSheetNames)
-        rows = self.gs.asListOfDicts("WorldPrayerDays")
-        mapRows = self.gs.asListOfDicts("Wikidata")
-        mapDict, _dup = LOD.getLookup(mapRows, "PropertyId", withDuplicates=False)
-        # 1935
-        row = rows[7]
-        if self.debug:
-            print(row)
-            print(mapDict)
-
-        # do not write anymore - the data has already been imported
-        # write=not BaseTest.inPublicCI()
-        write = False
-        # if write:
-        #    wd.login()
-        qid, errors = self.wd.addDict(row, mapDict, write=write)
-        if len(errors) > 0:
-            print(errors)
-        self.assertEqual(0, len(errors))
-        # we didn't write so no item
-        self.assertTrue(qid is None)
-        pass
+   
 
     def test_convert_to_claim(self):
         """

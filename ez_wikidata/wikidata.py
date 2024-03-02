@@ -9,14 +9,15 @@ import os
 import re
 import traceback
 import typing
-from dataclasses import dataclass
+from dataclasses import dataclass, field, InitVar
 from enum import Enum, auto
 from itertools import groupby
 from pathlib import Path
-from typing import List, Union
+from typing import Dict, List, Optional, Union
 
 import dateutil.parser
 from lodstorage.sparql import SPARQL
+from lodstorage.yamlable import lod_storable
 from ez_wikidata.version import Version
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
@@ -833,21 +834,48 @@ class WdDatatype(Enum):
         return wikibase_map.get(property_type, None)
 
 
-@dataclass
+@lod_storable
 class PropertyMapping:
     """
-    wikidata property mapping
-    """
+    Represents a single column Wikidata property mapping.
 
-    column: Union[str, None]  # if None, the value is used
+    Attributes:
+        column (Optional[str]): The column name in the data source; if None, the value is directly used.
+        propertyName (str): The human-readable name of the property.
+        propertyId (str): The Wikidata property ID (e.g., "P31").
+        propertyType (str): The type of the property as a string; converted to an enum in post-init.
+        property_type_enum (WdDatatype): The enum representation of the property type, initialized based on propertyType.
+        qualifierOf (Optional[str]): Specifies if the property is a qualifier of another property.
+        valueLookupType (Optional[Any]): The type (instance of/P31) of the property value for lookup if the value is not already a QID.
+        value (Optional[Any]): The default value to set for the property.
+        varname (Optional[str]): An optional variable name for internal use.
+
+    The __post_init__ method ensures the propertyType is correctly interpreted and stored as both a string and an enum.
+    """
     propertyName: str
     propertyId: str
-    propertyType: WdDatatype
+    propertyType: str
+    property_type_enum=InitVar[WdDatatype]
+    column: Optional[str]=None  # if None, the value is used
     qualifierOf: str = None
     valueLookupType: typing.Any = None  # type (instance of/P31) of the property value → used to lookup the qid if property value if value is not already a qid
     value: typing.Any = None  # set this value for the property
     varname: str = None
-
+    
+    def __post_init__(self):
+        """
+        Convert propertyType from string to WdDatatype enum if necessary
+        """
+        if isinstance(self.propertyType, str):
+            try:
+                self.propertyType_enum = WdDatatype[self.propertyType]
+            except KeyError:
+                raise ValueError(f"Invalid property type: {self.propertyType}")
+        else:
+            self.propertyType_enum = self.propertyType
+            # Ensure propertyType is stored as the correct string representation of the enum for YAML compatibility
+            self.propertyType = self.propertyType.name
+            
     @classmethod
     def from_records(
         cls, prop_mapping_records: typing.Dict[str, dict]
@@ -1000,8 +1028,19 @@ class PropertyMapping:
                 return pm
         pm = cls.getDefaultItemPropertyMapping()
         return pm
+    
+@lod_storable
+@dataclass
+class PropertyMappings:
+    """
+    A collection of Wikidata property mappings, with metadata.
+    """
+    name: str
+    mappings: Dict[str, PropertyMapping] = field(default_factory=dict)
+    description: Optional[str] = None
+    url: Optional[str] = None
 
-
+   
 class UrlReference(Reference):
     """
     Reference consisting of

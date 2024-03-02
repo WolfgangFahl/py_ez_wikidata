@@ -5,6 +5,7 @@ from datetime import datetime
 from lodstorage.lod import LOD
 from ez_wikidata.wikidata import (
     PropertyMapping,
+    PropertyMappings,
     UrlReference,
     WdDatatype,
     Wikidata,
@@ -599,6 +600,26 @@ class TestWikidata(BaseTest):
                 actual = self.wd.get_wikidata_item(qid_or_label, item_type_qid)
                 self.assertEqual(expected, actual)
 
+    def test_convert_to_yaml(self):
+        """
+        """
+        sb_dict = {
+            'text_field': WikidataSandboxProperties.TEXT,
+            'date_field': WikidataSandboxProperties.DATE,
+            'item_field': WikidataSandboxProperties.ITEM,
+            'url_field': WikidataSandboxProperties.URL,
+            'year_field': WikidataSandboxProperties.YEAR,
+            'extid_field': WikidataSandboxProperties.EXT_ID,
+        }
+        pm=PropertyMappings(
+            name="sandbox_props",
+            description="TSandbox Properties for Testing",
+            url="https://test.wikidata.org",
+            mappings=sb_dict
+        )
+        
+        yaml_str=pm.to_yaml()
+        print(yaml_str)
 
 class WikidataSandboxProperties:
     """

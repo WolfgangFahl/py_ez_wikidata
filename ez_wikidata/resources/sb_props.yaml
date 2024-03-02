@@ -1,0 +1,36 @@
+# WF 2024-03-02
+# Wikidata property mappings example for py_ez_wikidata
+name: sandbox_props
+description: Sandbox Properties for Testing
+url: https://test.wikidata.org
+mappings:
+  text_field:
+    propertyName: monolingualtext sandbox property
+    propertyId: P95227
+    propertyType: text
+    column: text
+  date_field:
+    propertyName: time sandbox property
+    propertyId: P95226
+    propertyType: date
+    column: date
+  item_field:
+    propertyName: wikibase-item sandbox property
+    propertyId: P95201
+    propertyType: itemid
+    column: item_id
+  url_field:
+    propertyName: url sandbox property
+    propertyId: P95231
+    propertyType: url
+    column: url
+  year_field:
+    propertyName: year sandbox property
+    propertyId: P96927
+    propertyType: year
+    column: year
+  extid_field:
+    propertyName: external-id sandbox property
+    propertyId: P95232
+    propertyType: extid
+    column: identifier

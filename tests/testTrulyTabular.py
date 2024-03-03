@@ -10,7 +10,9 @@ from urllib.error import HTTPError
 
 from lodstorage.query import Endpoint, Query, QuerySyntaxHighlight
 from lodstorage.sparql import SPARQL
-from lodstorage.trulytabular import TrulyTabular, WikidataItem, WikidataProperty
+from ez_wikidata.trulytabular import TrulyTabular
+from ez_wikidata.wikidata import WikidataItem
+from ez_wikidata.wdproperty import WikidataProperty
 
 
 class TestTrulyTabular(unittest.TestCase):

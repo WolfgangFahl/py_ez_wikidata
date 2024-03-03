@@ -15,17 +15,60 @@ from pathlib import Path
 
 class WdDatatype(Enum):
     """
-    Supported wikidata datatypes
+    Supported Wikidata datatypes, sorted by frequency and including special cases.
     """
-
-    item = auto()
-    itemid = auto()
-    year = auto()
-    date = auto()
-    extid = auto()
-    text = auto()
-    url = auto()
-    string = auto()
+    extid = auto()  # ExternalId: 8645 occurrences
+    wikibase_item = auto()  # WikibaseItem: 1634 occurrences
+    quantity = auto()  # Quantity: 652 occurrences
+    string = auto()  # String: 329 occurrences
+    url = auto()  # Url: 107 occurrences
+    commons_media = auto()  # CommonsMedia: 79 occurrences
+    time = auto()  # Time: 66 occurrences
+    monolingual_text = auto()  # Monolingualtext: 62 occurrences
+    math = auto()  # Math: 36 occurrences
+    wikibase_property = auto()  # WikibaseProperty: 21 occurrences
+    wikibase_sense = auto()  # WikibaseSense: 19 occurrences
+    wikibase_lexeme = auto()  # WikibaseLexeme: 17 occurrences
+    globe_coordinate = auto()  # GlobeCoordinate: 11 occurrences
+    wikibase_form = auto()  # WikibaseForm: 9 occurrences
+    musical_notation = auto()  # MusicalNotation: 6 occurrences
+    tabular_data = auto()  # TabularData: 6 occurrences
+    geoshape = auto()  # GeoShape: 3 occurrences
+    # Special cases:
+    year = auto()  # Year: Special case
+    date = auto()  # Date: Special case
+    
+    @classmethod
+    def from_wb_type_name(cls,wb_type_name:str)->'WdDatatype':
+        """
+        convert a wikibase type name to a WdDatatype
+        
+        Args:
+            wb_type_name(str): the string name of the wikibase type (with or without wikibase ontology prefix) 
+        """
+        type_map={
+            "ExternalId": WdDatatype.extid, 
+            "WikibaseItem": cls.wikibase_item,
+            "Quantity": cls.quantity,
+            "String": cls.string,
+            "Url": cls.url,
+            "CommonsMedia": cls.commons_media,
+            "Time": cls.time,
+            "Monolingualtext": cls.monolingual_text,
+            "Math": cls.math,
+            "WikibaseProperty": cls.wikibase_property,
+            "WikibaseSense": cls.wikibase_sense,
+            "WikibaseLexeme": cls.wikibase_lexeme,
+            "GlobeCoordinate": cls.globe_coordinate,
+            "WikibaseForm": cls.wikibase_form,
+            "MusicalNotation": cls.musical_notation,
+            "TabularData": cls.tabular_data,
+            "GeoShape": cls.geoshape
+        }
+        wb_type_name=wb_type_name.replace("http://wikiba.se/ontology#","")
+        wd_type=type_map.get(wb_type_name,WdDatatype.string)
+        return wd_type
+        
 
     @classmethod
     def _missing_(cls, _value):
@@ -83,10 +126,13 @@ class WikidataProperty:
     pid: str  # The property ID
     plabel: str # the label of the property
     description: str  # Description of the property
+    type_name: str # the type name
     lang: str="en" # the language 
     reverse: bool = False  # Indicates if the property is used in reverse direction
-    reverse: bool = False  # Indicates if the property is used in reverse direction
-
+    
+    def __post_init__(self):
+        self.ptype=WdDatatype.from_wb_type_name(self.type_name)
+    
     def getPredicate(self):
         """
         get me as a Predicate
@@ -111,24 +157,8 @@ class WikidataProperty:
             propertyLabels(list): a list of labels of the properties
             lang(str): the language of the label
         """
-        # the result dict
-        wdProperties = {}
-        if len(propertyLabels) > 0:
-            valuesClause = ""
-            for propertyLabel in propertyLabels:
-                valuesClause += f'   "{propertyLabel}"@{lang}\n'
-            query = f"""# get the properties for the given labels
-{Prefixes.getPrefixes(["rdf","rdfs","wikibase"])}
-SELECT ?property ?propertyLabel ?wbType WHERE {{
-  VALUES ?propertyLabel {{
-{valuesClause}
-  }}
-  ?property rdf:type wikibase:Property;rdfs:label ?propertyLabel.
-  ?property wikibase:propertyType  ?wbType.
-  FILTER(LANG(?propertyLabel) = "{lang}")
-}}"""
-            cls.addPropertiesForQuery(wdProperties, sparql, query)
-        return wdProperties
+        raise Exception("deprecated use WikidataPropertyManager instead")
+  
 
     @classmethod
     def from_id(cls, property_id: str, sparql, lang: str = "en") -> "WikidataProperty":
@@ -222,6 +252,10 @@ class WikidataPropertyManager:
         """
         initialize the lookups
         """
+        self.props_by_id={}
+        for lang, properties in self.props.items():
+            self.props_by_id[lang] = {prop.pid: prop for prop in properties.values()}
+
       
     def fetch_props_for_lang(self,endpoint_url:str="https://query.wikidata.org/sparql",lang:str="en"):
         """
@@ -234,10 +268,11 @@ class WikidataPropertyManager:
         self.sparql = SPARQL(endpoint_url)
         query=Prefixes.getPrefixes(["wikibase","rdfs","schema"])
         query += f"""
-SELECT ?property ?propertyLabel ?propertyDescription WHERE {{
+SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
   ?property a wikibase:Property;
   rdfs:label ?propertyLabel;
   schema:description ?propertyDescription.
+  ?property wikibase:propertyType  ?wbType.
   FILTER(LANG(?propertyLabel) = "{lang}").
   FILTER(LANG(?propertyDescription) = "{lang}").
 }}
@@ -249,14 +284,36 @@ SELECT ?property ?propertyLabel ?propertyDescription WHERE {{
         # Populate the dictionary
         for result in results:
             pid = result['property'].split('/')[-1]  # Extracts ID from URI
+            type_name=result['wbType'].split("#")[-1]
             plabel=result['propertyLabel']
             self.props[lang][plabel] = WikidataProperty(
                 pid=pid,
                 plabel=plabel,
                 description=result['propertyDescription'],
+                type_name=type_name,
                 lang=lang
             )
         return self.props[lang]
+    
+    @classmethod
+    def get_instance(cls,
+        endpoint_url:str="https://qlever.cs.uni-freiburg.de/api/wikidata",
+        langs=["en","de","fr"]):
+        """
+        initialize the wikidata property manager
+        
+        Args:
+            endpoint_url(str): the SPARQL endpoint to query if there is no cache available
+            langs(List[str]): the list of languages to query propery labels and descriptions for
+        """
+        cache_path = cls.get_cache_path()
+        # Check if cache file exists and is not empty
+        if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
+            wpm=cls.from_cache(cache_path)
+        else:
+            wpm=cls.from_endpoint(endpoint_url, langs)
+            wpm.store_to_cache()
+        return wpm
     
     @classmethod
     def get_cache_path(cls)->str:
@@ -265,6 +322,13 @@ SELECT ?property ?propertyLabel ?propertyDescription WHERE {{
         os.makedirs(cache_dir,exist_ok=True)
         cache_path= f"{cache_dir}/wikidata_properties.json"
         return cache_path
+    
+    @classmethod
+    def from_endpoint(cls,endpoint_url:str,langs:List[str]):
+        wpm=WikidataPropertyManager()
+        for lang in langs:
+            wpm.fetch_props_for_lang(endpoint_url=endpoint_url,lang=lang)
+        return wpm
            
     def store_to_cache(self, cache_path: str = None):
         """
@@ -292,6 +356,45 @@ SELECT ?property ?propertyLabel ?propertyDescription WHERE {{
         if cache_path is None:
             cache_path = cls.get_cache_path()
         return cls.load_from_json_file(cache_path)
+    
+    def get_properties_by_labels(self, labels: List[str], lang: str) -> Dict[str, WikidataProperty]:
+        """
+        Get properties by their labels for a specific language.
+        
+        Args:
+            labels: List of property labels to search for.
+            lang: The language of the labels.
+        
+        Returns:
+            A dictionary of {label: WikidataProperty} for found properties.
+        """
+        matched_properties = {}
+        # Check if language exists in cached properties
+        if lang in self.props:
+            # Iterate over requested labels and try to find them in the cached properties
+            for label in labels:
+                for prop_label, prop in self.props[lang].items():
+                    if label.lower() == prop_label.lower():
+                        matched_properties[label] = prop
+                        break  # Assume unique labels, break after first match
+        return matched_properties
+    
+    def get_properties_by_ids(self, ids: List[str], lang: str) -> Dict[str, Optional[WikidataProperty]]:
+        """
+        Get properties by their IDs for a specific language.
+
+        Args:
+            ids: List of property IDs to search for.
+            lang: The language of the properties.
+
+        Returns:
+            A dictionary of {property ID: WikidataProperty or None} for found and not found properties.
+        """
+        matched_properties = {}
+        if lang in self.properties_by_id:
+            for pid in ids:
+                matched_properties[pid] = self.properties_by_id[lang].get(pid)
+        return matched_properties
 
 @lod_storable
 class PropertyMapping:
@@ -370,11 +473,12 @@ class PropertyMapping:
         }
 
     @classmethod
-    def from_record(cls, record: dict) -> "PropertyMapping":
+    def from_record(cls, wpm:WikidataPropertyManager, record: dict) -> "PropertyMapping":
         """
         initialize PropertyMapping from the given record
         Args:
-            record: property mapping information
+            wpm(WikidataPropertyManager): to be used for type lookup
+            record(Dict): property mapping information
 
         Returns:
             PropertyMapping
@@ -396,9 +500,11 @@ class PropertyMapping:
             if property_type in [wd.name for wd in WdDatatype]:
                 property_type = WdDatatype[property_type]
             else:
-                property_type = Wikidata.get_wddatatype_of_property(
-                    record.get("propertyId", None)
-                )
+                pid=record.get("propertyId")
+                props=wpm.get_properties_by_ids([pid], "en")
+                if len(props==1):
+                    prop=props[0]
+                    property_type=prop.ptype
         mapping = PropertyMapping(
             column=record.get("column", None),
             propertyName=record.get("propertyName", None),
@@ -498,6 +604,3 @@ class PropertyMappings:
     mappings: Dict[str, PropertyMapping] = field(default_factory=dict)
     description: Optional[str] = None
     url: Optional[str] = None
-
-   
-

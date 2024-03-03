@@ -7,17 +7,17 @@ import datetime
 import json
 import os
 import re
+import textwrap
 import traceback
 import typing
-from dataclasses import dataclass, field, InitVar
-from enum import Enum, auto
+from dataclasses import dataclass, field
 from itertools import groupby
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import  List, Optional, Union
 
 import dateutil.parser
 from lodstorage.sparql import SPARQL
-from lodstorage.yamlable import lod_storable
+from ez_wikidata.wdproperty import Variable,PropertyMapping, PropertyMappings, WdDatatype
 from ez_wikidata.version import Version
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
@@ -33,7 +33,6 @@ from wikibaseintegrator.entities import ItemEntity
 from wikibaseintegrator.models import Claim, Reference, Snak
 from wikibaseintegrator.wbi_config import config as wbi_config
 from wikibaseintegrator.wbi_enums import WikibaseDatePrecision, WikibaseRank
-
 
 class Wikidata:
     """
@@ -772,275 +771,167 @@ class Wikidata:
         return item
 
 
+
 @dataclass
 class WikidataItem:
     qid: str
     label: str
-
-    def get_url(self):
-        return f"https://www.wikidata.org/wiki/{self.qid}"
-
-    def __eq__(self, other):
+    lang: str = "en"
+    sparql: Optional[SPARQL] = None
+    debug: bool = False
+    label: str = field(init=False, default=None)
+    description: str = field(init=False, default=None)
+    url: str = field(init=False)
+     
+    def __eq__(self, other) -> bool:
         """
         WikidataItems are equal if the qid is equal
         """
-        return isinstance(other, WikidataItem) and self.qid == getattr(
+        same=isinstance(other, WikidataItem) and self.qid == getattr(
             other, "qid", None
         )
+        return same
 
-    def __str__(self):
-        return self.qid
-
-
-class WdDatatype(Enum):
-    """
-    Supported wikidata datatypes
-    """
-
-    item = auto()
-    itemid = auto()
-    year = auto()
-    date = auto()
-    extid = auto()
-    text = auto()
-    url = auto()
-    string = auto()
-
-    @classmethod
-    def _missing_(cls, value):
-        """
-        default datatype
-        """
-        return cls.text
-
-    @classmethod
-    def get_by_wikibase(cls, property_type: str) -> Union["WdDatatype", None]:
-        """
-        Get WdDatatype by the corresponding wikibase datatype
-        Args:
-            property_type: wikibase name of the type
-
-        Returns:
-            WdDatatype
-        """
-        wikibase_map = {
-            "WikibaseItem": cls.itemid,
-            "Time": cls.date,
-            "Monolingualtext": cls.text,
-            "String": cls.string,
-            "ExternalId": cls.extid,
-            "Url": cls.url,
-        }
-        return wikibase_map.get(property_type, None)
-
-
-@lod_storable
-class PropertyMapping:
-    """
-    Represents a single column Wikidata property mapping.
-
-    Attributes:
-        column (Optional[str]): The column name in the data source; if None, the value is directly used.
-        propertyName (str): The human-readable name of the property.
-        propertyId (str): The Wikidata property ID (e.g., "P31").
-        propertyType (str): The type of the property as a string; converted to an enum in post-init.
-        property_type_enum (WdDatatype): The enum representation of the property type, initialized based on propertyType.
-        qualifierOf (Optional[str]): Specifies if the property is a qualifier of another property.
-        valueLookupType (Optional[Any]): The type (instance of/P31) of the property value for lookup if the value is not already a QID.
-        value (Optional[Any]): The default value to set for the property.
-        varname (Optional[str]): An optional variable name for internal use.
-
-    The __post_init__ method ensures the propertyType is correctly interpreted and stored as both a string and an enum.
-    """
-    propertyName: str
-    propertyId: str
-    propertyType: str
-    property_type_enum=InitVar[WdDatatype]
-    column: Optional[str]=None  # if None, the value is used
-    qualifierOf: str = None
-    valueLookupType: typing.Any = None  # type (instance of/P31) of the property value → used to lookup the qid if property value if value is not already a qid
-    value: typing.Any = None  # set this value for the property
-    varname: str = None
-    
     def __post_init__(self):
         """
-        Convert propertyType from string to WdDatatype enum if necessary
+        handle the construction
         """
-        if isinstance(self.propertyType, str):
-            try:
-                self.propertyType_enum = WdDatatype[self.propertyType]
-            except KeyError:
-                raise ValueError(f"Invalid property type: {self.propertyType}")
-        else:
-            self.propertyType_enum = self.propertyType
-            # Ensure propertyType is stored as the correct string representation of the enum for YAML compatibility
-            self.propertyType = self.propertyType.name
-            
-    @classmethod
-    def from_records(
-        cls, prop_mapping_records: typing.Dict[str, dict]
-    ) -> List["PropertyMapping"]:
-        """
-        convert given list of property mapping records to list of PropertyMappings
-        Args:
-            prop_mapping_records: records to convert
-
-        Returns:
-            property mappings
-        """
-        mappings = []
-        for record in prop_mapping_records.values():
-            mapping = PropertyMapping.from_record(record)
-            mappings.append(mapping)
-        return mappings
-
-    @classmethod
-    def get_legacy_mapping(cls) -> dict:
-        """
-        Returns the Mapping from old prop map keys to the new once
-        """
-        return {
-            "Column": "column",
-            "PropertyName": "propertyName",
-            "PropertyId": "propertyId",
-            "Type": "propertyType",
-            "Qualifier": "qualifierOf",
-            "Lookup": "valueLookupType",
-            "Value": "value",
-            "PropVarname": "varname",
-        }
-
-    @classmethod
-    def from_record(cls, record: dict) -> "PropertyMapping":
-        """
-        initialize PropertyMapping from the given record
-        Args:
-            record: property mapping information
-
-        Returns:
-            PropertyMapping
-        """
-        legacy_lookup = cls.get_legacy_mapping()
-        record = record.copy()
-        for i in range(len(record)):
-            key = list(record.keys())[i]
-            if key in legacy_lookup:
-                record[legacy_lookup[key]] = record[key]
-        # handle missing property type
-        property_type = record.get("propertyType", None)
-        if property_type in [None, ""]:
-            if record.get("valueLookupType", None) not in [None, ""]:
-                property_type = WdDatatype.itemid
-            elif record.get("value", None) not in [None, ""]:
-                property_type = WdDatatype.itemid
-        if property_type is not None and not isinstance(property_type, WdDatatype):
-            if property_type in [wd.name for wd in WdDatatype]:
-                property_type = WdDatatype[property_type]
-            else:
-                property_type = Wikidata.get_wddatatype_of_property(
-                    record.get("propertyId", None)
-                )
-        mapping = PropertyMapping(
-            column=record.get("column", None),
-            propertyName=record.get("propertyName", None),
-            propertyId=record.get("propertyId", None),
-            propertyType=property_type,
-            qualifierOf=record.get("qualifierOf", None),
-            valueLookupType=record.get("valueLookupType", None),
-            value=record.get("value", None),
-            varname=record.get("varname", None),
-        )
-        return mapping
-
-    def to_record(self) -> dict:
-        """
-        convert property mapping to its dict representation
-        """
-        key_map = self.get_legacy_mapping()
-        record = dict()
-        for old_key, new_key in key_map.items():
-            record[old_key] = getattr(self, new_key, None)
-        return record
-
-    def is_qualifier(self) -> bool:
-        """
-        Returns true if the property mapping describes a qualifier
-        """
-        is_qualifier = not (self.qualifierOf is None or self.qualifierOf == "")
-        return is_qualifier
-
-    @classmethod
-    def getDefaultItemPropertyMapping(cls) -> "PropertyMapping":
-        """
-        get the defaultItemPropertyMapping
-        """
-        if not hasattr(cls, "defaultItemPropertyMapping"):
-            item_prop_map = PropertyMapping(
-                column="item",
-                propertyName="item",
-                propertyId="",
-                propertyType=WdDatatype.item,
-                varname="item",
+        if not self.qid:
+            self.qid = None
+            return
+        self.url=f"https://www.wikidata.org/wiki/{self.qid}"
+        # numeric qid
+        self.qnumber = int(self.qid[1:])
+        self.url = f"https://www.wikidata.org/wiki/{self.qid}"
+        if self.sparql is not None:
+            self.qlabel, self.description = WikidataItem.getLabelAndDescription(
+                self.sparql, self.qid, self.lang, debug=self.debug
             )
-            cls.defaultItemPropertyMapping = item_prop_map
-        return cls.defaultItemPropertyMapping
+            self.varname = Variable.validVarName(self.qlabel)
+            self.itemVarname = f"{self.varname}Item"
+            self.labelVarname = f"{self.varname}"
 
-    def is_item_itself(self) -> bool:
-        """
-        Returns true if the property mapping links to the existing item
-        """
-        return self.propertyType == WdDatatype.item
+    def __str__(self):
+        return self.asText(long=False)
 
-    @classmethod
-    def get_qualifier_lookup(
-        cls, properties: List["PropertyMapping"]
-    ) -> typing.Dict[str, List["PropertyMapping"]]:
+    def asText(self, long: bool = True, wrapAt: int = 0):
         """
-        Get a lookup for a property and all its qualifier
+        returns my content as a text representation
+
         Args:
-            properties: property mappings to generate the lookup from
-         Returns:
-             dict as property qualifier lookup
+            long(bool): True if a long format including url is wished
+            wrapAt(int): wrap long lines at the given width (if >0)
+
+        Returns:
+            str: a text representation of my content
         """
-        res = dict()
-        for pm in properties:
-            if not isinstance(pm, PropertyMapping):
-                continue
-            if pm.qualifierOf is None or pm.qualifierOf == "":
-                continue
-            else:
-                if pm.qualifierOf in res:
-                    res[pm.qualifierOf].append(pm)
-                else:
-                    res[pm.qualifierOf] = [pm]
-        return res
+        text = self.qid or "❓"
+        if hasattr(self, "qlabel"):
+            text = f"{self.qlabel} ({self.qid})"
+        if hasattr(self, "description"):
+            desc = self.description
+            if wrapAt > 0:
+                desc = textwrap.fill(desc, width=wrapAt)
+            text += f"☞{desc}"
+        if long and hasattr(self, "url"):
+            text += f"→ {self.url}"
+        return text
+
+  
 
     @classmethod
-    def get_item_mapping(
-        cls, property_mappings: List["PropertyMapping"]
-    ) -> "PropertyMapping":
+    def getLabelAndDescription(
+        cls, sparql: SPARQL, itemId: str, lang: str = "en", debug: bool = False
+    ):
         """
-        get the property mapping that is used for the default "item" primary key
-        if no property is defined use the default "item" mapping
-        """
-        for pm in property_mappings:
-            if pm.is_item_itself():
-                return pm
-        pm = cls.getDefaultItemPropertyMapping()
-        return pm
-    
-@lod_storable
-@dataclass
-class PropertyMappings:
-    """
-    A collection of Wikidata property mappings, with metadata.
-    """
-    name: str
-    mappings: Dict[str, PropertyMapping] = field(default_factory=dict)
-    description: Optional[str] = None
-    url: Optional[str] = None
+        get  the label for the given item and language
 
-   
+        Args:
+            itemId(str): the wikidata Q/P id
+            lang(str): the language of the label
+            debug(bool): if True output debug information
+
+        Returns:
+            (str,str): the label and description as a tuple
+        """
+        query = f"""# get the label for the given item
+{cls.getPrefixes(["rdfs","wd","schema"])}        
+SELECT ?itemLabel ?itemDescription
+WHERE
+{{
+  VALUES ?item {{
+    wd:{itemId}
+  }}
+  ?item rdfs:label ?itemLabel.
+  FILTER (LANG(?itemLabel) = "{lang}").
+  ?item schema:description ?itemDescription.
+  FILTER(LANG(?itemDescription) = "{lang}")
+}}"""
+        try:
+            if debug:
+                msg = f"getLabelAndDescription for wikidata Item {itemId} with query:\n{query}"
+                print(msg)
+            labelAndDescription = sparql.getValues(
+                query, ["itemLabel", "itemDescription"]
+            )
+        except Exception as ex:
+            msg = f"getLabelAndDescription failed for wikidata Item {itemId}:{str(ex)}"
+            if debug:
+                print(msg)
+            raise Exception(msg)
+        return labelAndDescription
+
+    @classmethod
+    def getItemsByLabel(
+        cls, sparql: SPARQL, itemLabel: str, lang: str = "en", debug: bool = False
+    ) -> list:
+        """
+        get a Wikidata items by the given label
+
+        Args:
+            sparql(SPARQL): the SPARQL endpoint to use
+            itemLabel(str): the label of the items
+            lang(str): the language of the label
+            debug(bool): if True show debugging information
+
+        Returns:
+            a list of potential items
+        """
+        valuesClause = f'   "{itemLabel}"@{lang}\n'
+        query = f"""# get the items that have the given label in the given language
+# e.g. we'll find human=Q5 as the oldest type for the label "human" first
+# and then the newer ones such as "race in Warcraft"
+{cls.getPrefixes(["rdfs","schema","xsd"])}
+SELECT 
+  #?itemId 
+  ?item 
+  ?itemLabel 
+  ?itemDescription
+WHERE {{ 
+  VALUES ?itemLabel {{
+    {valuesClause}
+  }}
+  #BIND (xsd:integer(SUBSTR(STR(?item),33)) AS ?itemId)
+  ?item rdfs:label ?itemLabel. 
+  ?item schema:description ?itemDescription.
+  FILTER(LANG(?itemDescription)="{lang}")
+}} 
+#ORDER BY ?itemId"""
+        qLod = sparql.queryAsListOfDicts(query)
+        items = []
+        for record in qLod:
+            url = record["item"]
+            qid = re.sub(r"http://www.wikidata.org/entity/(.*)", r"\1", url)
+            item = WikidataItem(qid, debug=debug)
+            item.url = url
+            item.qlabel = record["itemLabel"]
+            item.varname = Variable.validVarName(item.qlabel)
+            item.description = record["itemDescription"]
+            items.append(item)
+        sortedItems = sorted(items, key=lambda item: item.qnumber)
+        return sortedItems
+
+
 class UrlReference(Reference):
     """
     Reference consisting of
@@ -1064,3 +955,4 @@ class UrlReference(Reference):
         self.date = date
         self.add(URL(value=self.url, prop_nr="P854"))
         self.add(Wikidata.get_date_claim(date, prop_nr="P813"))
+

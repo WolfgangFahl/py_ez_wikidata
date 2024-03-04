@@ -357,7 +357,8 @@ class PropertyMapping:
     propertyName: str
     propertyId: str
     propertyType: str
-    property_type_enum=InitVar[WdDatatype]
+    
+    #property_type_enum: WdDatatype=field(init=False)
     column: Optional[str]=None  # if None, the value is used
     qualifierOf: str = None
     valueLookupType: Any = None  # type (instance of/P31) of the property value → used to lookup the qid if property value if value is not already a qid
@@ -368,15 +369,16 @@ class PropertyMapping:
         """
         Convert propertyType from string to WdDatatype enum if necessary
         """
+        self.property_type_enum=None
         if isinstance(self.propertyType, str):
             try:
-                self.propertyType_enum = WdDatatype[self.propertyType]
+                self.property_type_enum = WdDatatype[self.propertyType]
             except KeyError:
                 raise ValueError(f"Invalid property type: {self.propertyType}")
         else:
-            self.propertyType_enum = self.propertyType
+            self.property_type_enum = self.propertyType
             # Ensure propertyType is stored as the correct string representation of the enum for YAML compatibility
-            self.propertyType = self.propertyType.name
+            self.propertyType = self.property_type_enum.name
             
     @classmethod
     def from_records(

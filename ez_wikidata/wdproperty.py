@@ -129,9 +129,21 @@ class WikidataProperty:
     type_name: str # the type name
     lang: str="en" # the language 
     reverse: bool = False  # Indicates if the property is used in reverse direction
+    # Variables initialized in __post_init__
+    varname: str = field(init=False)
+    valueVarname: str = field(init=False)
+    labelVarname: str = field(init=False)
+    ptype: WdDatatype = field(init=False) 
     
     def __post_init__(self):
+        """
+        create calculated fields
+        """
+        self.url=f"https://www.wikidata.org/wiki/Property:{self.pid}"
         self.ptype=WdDatatype.from_wb_type_name(self.type_name)
+        self.varname = Variable.validVarName(self.plabel)
+        self.valueVarname = f"{self.varname}Item" if "WikibaseItem" in self.type_name else self.varname
+        self.labelVarname = self.varname
     
     def getPredicate(self):
         """
@@ -146,19 +158,6 @@ class WikidataProperty:
         if hasattr(self, "plabel"):
             text = f"{self.plabel} ({self.pid})"
         return text
-
-    @classmethod
-    def getPropertiesByLabels(cls, sparql, propertyLabels: list, lang: str = "en"):
-        """
-        get a list of Wikidata properties by the given label list
-
-        Args:
-            sparql(SPARQL): the SPARQL endpoint to use
-            propertyLabels(list): a list of labels of the properties
-            lang(str): the language of the label
-        """
-        raise Exception("deprecated use WikidataPropertyManager instead")
-  
 
     @classmethod
     def from_id(cls, property_id: str, sparql, lang: str = "en") -> "WikidataProperty":
@@ -181,48 +180,6 @@ class WikidataProperty:
             msg = f"unexpected from_id result for property id {property_id}. Expected 0 or 1 results bot got:{property_labels}"
             raise ValueError(msg)
         pass
-
-    @classmethod
-    def getPropertiesByIds(cls, sparql, propertyIds: list, lang: str = "en"):
-        """
-        get a list of Wikidata properties by the given id list
-
-        Args:
-            sparql(SPARQL): the SPARQL endpoint to use
-            propertyIds(list): a list of ids of the properties
-            lang(str): the language of the label
-        """
-        raise Exception("deprecated use WikidataPropertyManager instead")
-  
-
-    @classmethod
-    def addPropertiesForQuery(cls, wdProperties: list, sparql, query):
-        """
-          add properties from the given query's result to the given
-          wdProperties list using the given sparql endpoint
-        Args:
-          wdProperties(list): the list of wikidata properties
-          sparql(SPARQL): the SPARQL endpoint to use
-          query(str): the SPARQL query to perform
-        """
-        qLod = sparql.queryAsListOfDicts(query)
-        for record in qLod:
-            url = record["property"]
-            pid = re.sub(r"http://www.wikidata.org/entity/(.*)", r"\1", url)
-            prop = WikidataProperty(pid)
-            prop.plabel = record["propertyLabel"]
-            prop.wbtype = record["wbType"]
-            prop.url = url
-            wdProperties[prop.plabel] = prop
-            prop.varname = Variable.validVarName(prop.plabel)
-            prop.valueVarname = (
-                f"{prop.varname}Item"
-                if "WikibaseItem" in prop.wbtype
-                else "" f"{prop.varname}"
-            )
-            prop.labelVarname = f"{prop.varname}"
-            pass
-        return wdProperties
     
 @lod_storable
 class WikidataPropertyManager:

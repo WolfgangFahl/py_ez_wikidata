@@ -368,10 +368,11 @@ class TestTrulyTabular(unittest.TestCase):
         debug = self.debug
         #debug = True
         for endpointConf in self.endpointConfs:
+            wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint)
             try:
                 tt = TrulyTabular(qid, debug=debug)
                 for pid in ["P571", "P6375"]:
-                    wdProperty = WikidataProperty.from_id(pid, sparql=tt.sparql)
+                    wdProperty = wpm.get_property_by_id(pid)
                     #
                     itemCount, _itemCountQuery = tt.count()
                     statsRow = tt.genWdPropertyStatistic(wdProperty, itemCount)

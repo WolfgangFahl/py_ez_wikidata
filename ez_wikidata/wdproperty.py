@@ -494,7 +494,7 @@ class PropertyMapping:
         """
         Returns true if the property mapping links to the existing item
         """
-        return self.propertyType == WdDatatype.item
+        return self.property_type_enum == WdDatatype.item
 
     @classmethod
     def get_qualifier_lookup(

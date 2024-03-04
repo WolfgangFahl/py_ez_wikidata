@@ -590,27 +590,27 @@ class Wikidata:
         """
         if value is None or value == "":
             return None
-        if pm.propertyType is None:
-            pm.propertyType = self.get_wddatatype_of_property(pm.propertyId)
-        if pm.propertyType is WdDatatype.year:
+        if pm.property_type_enum is None:
+            pm.property_type_enum = self.get_wddatatype_of_property(pm.propertyId)
+        if pm.property_type_enum is WdDatatype.year:
             yearString = f"+{value}-01-01T00:00:00Z"
             statement = Time(
                 yearString, prop_nr=pm.propertyId, precision=WikibaseDatePrecision.YEAR
             )
-        elif pm.propertyType is WdDatatype.date:
+        elif pm.property_type_enum is WdDatatype.date:
             statement = self.get_date_claim(value, pm.propertyId)
-        elif pm.propertyType is WdDatatype.extid:
+        elif pm.property_type_enum is WdDatatype.extid:
             statement = ExternalID(value=value, prop_nr=pm.propertyId)
-        elif pm.propertyType is WdDatatype.string:
+        elif pm.property_type_enum is WdDatatype.string:
             statement = String(value=str(value), prop_nr=pm.propertyId)
-        elif pm.propertyType is WdDatatype.text:
+        elif pm.property_type_enum is WdDatatype.text:
             statement = MonolingualText(text=str(value), prop_nr=pm.propertyId)
-        elif pm.propertyType is WdDatatype.url:
+        elif pm.property_type_enum is WdDatatype.url:
             statement = URL(value=value, prop_nr=pm.propertyId)
-        elif pm.propertyType is WdDatatype.itemid:
+        elif pm.property_type_enum is WdDatatype.itemid:
             statement = Item(value=value, prop_nr=pm.propertyId)
         else:
-            raise Exception(f"({pm.propertyType}) unknown or not supported datatype")
+            raise Exception(f"({pm.property_type_enum}) unknown or not supported datatype")
         return statement
 
     @staticmethod
@@ -731,7 +731,7 @@ class Wikidata:
         Normalize given record by converting Qids to WikidataItem objects (lookup label) and find out Qid if label given
         based on the given prop_map
         """
-        itemid_props = [p for p in prop_map if p.propertyType is WdDatatype.itemid]
+        itemid_props = [p for p in prop_map if p.property_type_enum is WdDatatype.itemid]
         for p in itemid_props:
             if p.column is None or p.column == "":
                 continue

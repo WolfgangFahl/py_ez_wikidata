@@ -26,7 +26,9 @@ class TestTrulyTabular(unittest.TestCase):
         qleverEndpoint.name = "qlever-wikidata"
         qleverEndpoint.method = "POST"
         qleverEndpoint.database = "qlever"
+        # RWTH Aachen i5 endpoint
         qleverEndpoint.endpoint = "http://qlever-api.wikidata.dbis.rwth-aachen.de"
+        
         self.endpointConfs = {qleverEndpoint, Endpoint.getDefault()}
         pass
 
@@ -486,8 +488,3 @@ class TestTrulyTabular(unittest.TestCase):
                 self.assertTrue(
                     expected in sparqlQuery, f"config {i}:{expected} missing"
                 )
-
-
-if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()

@@ -192,25 +192,8 @@ class WikidataProperty:
             propertyIds(list): a list of ids of the properties
             lang(str): the language of the label
         """
-        # the result dict
-        wdProperties = {}
-        if len(propertyIds) > 0:
-            valuesClause = ""
-            for propertyId in propertyIds:
-                valuesClause += f"   wd:{propertyId}\n"
-            query = f"""
-# get the property for the given property Ids
-{Prefixes.getPrefixes(["rdf","rdfs","wd","wikibase"])}
-SELECT ?property ?propertyLabel ?wbType WHERE {{
-  VALUES ?property {{
-{valuesClause}
-  }}
-  ?property rdf:type wikibase:Property;rdfs:label ?propertyLabel.
-  ?property wikibase:propertyType  ?wbType.
-  FILTER(LANG(?propertyLabel) = "{lang}")
-}}"""
-            cls.addPropertiesForQuery(wdProperties, sparql, query)
-        return wdProperties
+        raise Exception("deprecated use WikidataPropertyManager instead")
+  
 
     @classmethod
     def addPropertiesForQuery(cls, wdProperties: list, sparql, query):
@@ -391,9 +374,9 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
             A dictionary of {property ID: WikidataProperty or None} for found and not found properties.
         """
         matched_properties = {}
-        if lang in self.properties_by_id:
+        if lang in self.props_by_id:
             for pid in ids:
-                matched_properties[pid] = self.properties_by_id[lang].get(pid)
+                matched_properties[pid] = self.props_by_id[lang].get(pid)
         return matched_properties
 
 @lod_storable

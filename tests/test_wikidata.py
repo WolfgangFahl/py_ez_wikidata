@@ -60,8 +60,6 @@ class TestWikidata(BaseTest):
                     print(actual_qid)
                 self.assertEqual(expected_qid, actual_qid)
 
-   
-
     def test_convert_to_claim(self):
         """
         tests convert_to_claim

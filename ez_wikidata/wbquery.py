@@ -189,10 +189,10 @@ SELECT ?{item_varname} ?{item_varname}Label ?{item_varname}Description
                 continue
             if not prop_map.value and prop_map.varname:
                 property_selections = f"\n  ?{prop_map.varname}"
-                if prop_map.propertyType is WdDatatype.itemid:
+                if prop_map.property_type_enum is WdDatatype.itemid:
                     # items will automatically fetch labels
                     property_selections += f" ?{prop_map.varname}Label"
-                elif prop_map.propertyType is WdDatatype.extid:
+                elif prop_map.property_type_enum is WdDatatype.extid:
                     # extid' will automatically fetch formatted URIs
                     property_selections += f" ?{prop_map.varname}Url"
                 sparql += property_selections
@@ -217,11 +217,11 @@ SELECT ?{item_varname} ?{item_varname}Label ?{item_varname}Description
                     if optional:
                         sparql += "\n  OPTIONAL {"
                     sparql += f"\n    ?{item_varname} wdt:{prop_map.propertyId} ?{prop_map.varname}."
-                    if prop_map.propertyType is WdDatatype.itemid:
+                    if prop_map.property_type_enum is WdDatatype.itemid:
                         # also query label of the qid with language lang
                         sparql += f"\n    ?{prop_map.varname} rdfs:label ?{prop_map.varname}Label."
                         sparql += f"""\n    FILTER(LANG(?{prop_map.varname}Label) = "{lang}")"""
-                    elif prop_map.propertyType is WdDatatype.extid:
+                    elif prop_map.property_type_enum is WdDatatype.extid:
                         # ToDo: decision to make see https://github.com/WolfgangFahl/PyGenericSpreadSheet/issues/15
                         sparql += f"\n    wd:{prop_map.propertyId} wdt:P1630 ?{prop_map.varname}FormatterUrl."
                         sparql += f"\n    BIND(IRI(REPLACE(?{prop_map.varname}, '^(.+)$', ?{prop_map.varname}FormatterUrl)) AS ?{prop_map.varname}Url)."

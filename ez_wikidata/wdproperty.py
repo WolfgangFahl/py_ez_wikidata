@@ -24,7 +24,7 @@ class WdDatatype(Enum):
     url = auto()  # Url: 107 occurrences
     commons_media = auto()  # CommonsMedia: 79 occurrences
     time = auto()  # Time: 66 occurrences
-    monolingual_text = auto()  # Monolingualtext: 62 occurrences
+    text = auto()  # Monolingualtext: 62 occurrences
     math = auto()  # Math: 36 occurrences
     wikibase_property = auto()  # WikibaseProperty: 21 occurrences
     wikibase_sense = auto()  # WikibaseSense: 19 occurrences
@@ -54,7 +54,7 @@ class WdDatatype(Enum):
             "Url": cls.url,
             "CommonsMedia": cls.commons_media,
             "Time": cls.time,
-            "Monolingualtext": cls.monolingual_text,
+            "Monolingualtext": cls.text,
             "Math": cls.math,
             "WikibaseProperty": cls.wikibase_property,
             "WikibaseSense": cls.wikibase_sense,

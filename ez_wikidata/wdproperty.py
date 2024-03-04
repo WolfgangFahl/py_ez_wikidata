@@ -158,28 +158,6 @@ class WikidataProperty:
         if hasattr(self, "plabel"):
             text = f"{self.plabel} ({self.pid})"
         return text
-
-    @classmethod
-    def from_id(cls, property_id: str, sparql, lang: str = "en") -> "WikidataProperty":
-        """
-        construct a WikidataProperty from the given property_id
-
-        Args:
-            property_id(str): a property ID e.g. "P6375"
-            sparql(SPARQL): the SPARQL endpoint to use
-            lang(str): the language for the label
-        """
-        properties = cls.getPropertiesByIds(sparql, [property_id], lang)
-        prop_count = len(properties)
-        if prop_count == 1:
-            return list(properties.values())[0]
-        elif prop_count == 0:
-            return None
-        else:
-            property_labels = list(properties.keys())
-            msg = f"unexpected from_id result for property id {property_id}. Expected 0 or 1 results bot got:{property_labels}"
-            raise ValueError(msg)
-        pass
     
 @lod_storable
 class WikidataPropertyManager:
@@ -335,6 +313,26 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
             for pid in ids:
                 matched_properties[pid] = self.props_by_id[lang].get(pid)
         return matched_properties
+    
+    def get_property_by_id(self, property_id: str, lang: str = "en") -> WikidataProperty:
+        """
+        lookup a WikidataProperty for the given property_id
+
+        Args:
+            property_id(str): a property ID e.g. "P6375"
+            lang(str): the language for the label
+        """
+        properties = self.get_properties_by_ids([property_id], lang)
+        prop_count = len(properties)
+        if prop_count == 1:
+            return list(properties.values())[0]
+        elif prop_count == 0:
+            return None
+        else:
+            property_labels = list(properties.keys())
+            msg = f"unexpected get_property_by_id result for property id {property_id}. Expected 0 or 1 results bot got:{property_labels}"
+            raise ValueError(msg)
+        pass
 
 @lod_storable
 class PropertyMapping:

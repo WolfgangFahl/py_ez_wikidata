@@ -12,7 +12,7 @@ from lodstorage.query import Endpoint, Query, QuerySyntaxHighlight
 from lodstorage.sparql import SPARQL
 from ez_wikidata.trulytabular import TrulyTabular
 from ez_wikidata.wikidata import WikidataItem
-from ez_wikidata.wdproperty import WikidataProperty
+from ez_wikidata.wdproperty import WikidataProperty, WikidataPropertyManager
 
 
 class TestTrulyTabular(unittest.TestCase):
@@ -39,7 +39,7 @@ class TestTrulyTabular(unittest.TestCase):
             endpointConf(Endpoint): the endpoint for which there is a problem
         """
         self.handleEndpointErrors(
-            ex, ex, endpointConf, endpointConf, "503", "Service Unavailable"
+            ex, endpointConf, "503", "Service Unavailable"
         )
 
     def handleEndpointErrors(
@@ -133,14 +133,15 @@ class TestTrulyTabular(unittest.TestCase):
         expected = ["Wikimedia database name"]
         for endpointConf in self.endpointConfs:
             try:
-                sparql = SPARQL(endpointConf.endpoint, method=endpointConf.method)
-                propList = WikidataProperty.getPropertiesByIds(
-                    sparql, propertyIds, lang="en"
+                wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint)
+                prop_dict= wpm.get_properties_by_ids(
+                    propertyIds, 
+                    lang="en"
                 )
-                for i, prop in enumerate(propList):
+                for i, prop in enumerate(prop_dict.values()):
                     if debug:
                         print(f"{endpointConf.name} {i}:{prop}")
-                    self.assertEqual(prop, expected[i])
+                    self.assertEqual(prop.plabel, expected[i])
             except (Exception, HTTPError) as ex:
                 self.handleServiceUnavailable(ex, endpointConf)
                 pass

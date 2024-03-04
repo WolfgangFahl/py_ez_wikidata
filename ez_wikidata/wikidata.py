@@ -17,6 +17,7 @@ from typing import  List, Optional, Union
 
 import dateutil.parser
 from lodstorage.sparql import SPARQL
+from ez_wikidata.prefixes import Prefixes
 from ez_wikidata.wdproperty import Variable,PropertyMapping, PropertyMappings, WdDatatype
 from ez_wikidata.version import Version
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
@@ -837,8 +838,6 @@ class WikidataItem:
             text += f"→ {self.url}"
         return text
 
-  
-
     @classmethod
     def getLabelAndDescription(
         cls, sparql: SPARQL, itemId: str, lang: str = "en", debug: bool = False
@@ -855,7 +854,7 @@ class WikidataItem:
             (str,str): the label and description as a tuple
         """
         query = f"""# get the label for the given item
-{cls.getPrefixes(["rdfs","wd","schema"])}        
+{Prefixes.getPrefixes(["rdfs","wd","schema"])}        
 SELECT ?itemLabel ?itemDescription
 WHERE
 {{
@@ -901,7 +900,7 @@ WHERE
         query = f"""# get the items that have the given label in the given language
 # e.g. we'll find human=Q5 as the oldest type for the label "human" first
 # and then the newer ones such as "race in Warcraft"
-{cls.getPrefixes(["rdfs","schema","xsd"])}
+{Prefixes.getPrefixes(["rdfs","schema","xsd"])}
 SELECT 
   #?itemId 
   ?item 

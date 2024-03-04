@@ -18,7 +18,7 @@ class WdDatatype(Enum):
     Supported Wikidata datatypes, sorted by frequency and including special cases.
     """
     extid = auto()  # ExternalId: 8645 occurrences
-    wikibase_item = auto()  # WikibaseItem: 1634 occurrences
+    itemid = auto()  # WikibaseItem: 1634 occurrences
     quantity = auto()  # Quantity: 652 occurrences
     string = auto()  # String: 329 occurrences
     url = auto()  # Url: 107 occurrences
@@ -47,8 +47,8 @@ class WdDatatype(Enum):
             wb_type_name(str): the string name of the wikibase type (with or without wikibase ontology prefix) 
         """
         type_map={
-            "ExternalId": WdDatatype.extid, 
-            "WikibaseItem": cls.wikibase_item,
+            "ExternalId": cls.extid, 
+            "WikibaseItem": cls.itemid,
             "Quantity": cls.quantity,
             "String": cls.string,
             "Url": cls.url,

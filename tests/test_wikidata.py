@@ -419,27 +419,36 @@ class TestWikidata(BaseTest):
         BaseTest.inPublicCI(),
         "Tests creating and modifying items. To run in CI setup credentials",
     )
+    
     def test_value_lookup(self):
         """
         tests the lookup of wikidata ids from label value
         Note: Currently the lookup is always against wikidata. Changing this requires to adapt this test accordingly.
         """
         lookup_type, label, expected_qid = (
-            "Q3336843",
-            "Scotland",
-            "Q22",
+            "Q3336843", # constituent country of the United Kingdom - Wikidata
+            "Scotland", # label to lookup
+            "Q22",      # expected lookup result
         )  # type qid, label, qid
         mappings = [
             PropertyMapping(
-                "item_id",
-                "wikibase-item sandbox property",
-                "P95201",
+                column="country_id",
+                propertyName="wikibase-item sandbox property",
+                propertyId="P95201",
                 propertyType=WdDatatype.itemid,
                 valueLookupType=lookup_type,
             )
         ]
-        record = {"label": str(uuid.uuid4()), "item_id": label}
-        expected_record = {"label": record["label"], "item_id": expected_qid}
+        # let't try adding a dict
+        entity_label=f"str(uuid.uuid4())"
+        record = {
+            "label": entity_label, 
+            "country_id": label
+        }
+        expected_record = {
+            "label": entity_label, 
+            "country_id": expected_qid
+        }
 
         wd = Wikidata(baseurl="https://test.wikidata.org")
         wd.loginWithCredentials()

@@ -930,7 +930,6 @@ WHERE {{
         sortedItems = sorted(items, key=lambda item: item.qnumber)
         return sortedItems
 
-
 class UrlReference(Reference):
     """
     Reference consisting of

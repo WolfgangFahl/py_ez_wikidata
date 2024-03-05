@@ -157,6 +157,7 @@ class WikidataProperty:
         if hasattr(self, "plabel"):
             text = f"{self.plabel} ({self.pid})"
         return text
+
     
 @lod_storable
 class WikidataPropertyManager:
@@ -173,6 +174,9 @@ class WikidataPropertyManager:
         self.props_by_id={}
         for _plabel,prop in self.props.items():
             self.props_by_id[prop.pid]=prop
+        if self.lang!="en":
+            self.wpm_en=WikidataPropertyManager.get_instance("en")
+            
       
     def fetch_props_for_lang(self,endpoint_url:str="https://query.wikidata.org/sparql",lang:str="en"):
         """
@@ -272,43 +276,40 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
             cache_path = cls.get_cache_path()
         return cls.load_from_json_file(cache_path)
     
-    def get_properties_by_labels(self, labels: List[str], lang: str) -> Dict[str, WikidataProperty]:
+    def get_properties_by_labels(self, labels: List[str]) -> Dict[str, WikidataProperty]:
         """
         Get properties by their labels for a specific language.
         
         Args:
             labels: List of property labels to search for.
-            lang: The language of the labels.
-        
+
         Returns:
             A dictionary of {label: WikidataProperty} for found properties.
         """
         matched_properties = {}
         # Check if language exists in cached properties
-        if lang in self.props:
-            # Iterate over requested labels and try to find them in the cached properties
-            for label in labels:
-                for prop_label, prop in self.props[lang].items():
-                    if label.lower() == prop_label.lower():
-                        matched_properties[label] = prop
-                        break  # Assume unique labels, break after first match
+        # Iterate over requested labels and try to find them in the cached properties
+        for label in labels:   
+            if label in self.props:
+                matched_properties[label] = self.props[label]
         return matched_properties
     
-    def get_properties_by_ids(self, ids: List[str], lang: str) -> Dict[str, Optional[WikidataProperty]]:
+    def get_properties_by_ids(self, ids: List[str]) -> Dict[str, Optional[WikidataProperty]]:
         """
         Get properties by their IDs for a specific language.
 
         Args:
             ids: List of property IDs to search for.
-            lang: The language of the properties.
 
         Returns:
             A dictionary of {property ID: WikidataProperty or None} for found and not found properties.
         """
         matched_properties = {}
-        if lang in self.props_by_id:
-            for pid in ids:
-                matched_properties[pid] = self.props_by_id[lang].get(pid)
+        for pid in ids:
+            if pid in self.props_by_id:
+                matched_properties[pid] = self.props_by_id[pid]
+            elif pid in self.wpm_en.props_by_id:
+                matched_properties[pid] = self.wpm_en.props_by_id[pid]
         return matched_properties
     
     def get_property_by_id(self, property_id: str, lang: str = "en") -> WikidataProperty:

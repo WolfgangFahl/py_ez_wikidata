@@ -18,7 +18,7 @@ from typing import  List, Optional, Union
 import dateutil.parser
 from lodstorage.sparql import SPARQL
 from ez_wikidata.prefixes import Prefixes
-from ez_wikidata.wdproperty import Variable,PropertyMapping, PropertyMappings, WdDatatype
+from ez_wikidata.wdproperty import Variable,PropertyMapping, PropertyMappings, WdDatatype, WikidataPropertyManager
 from ez_wikidata.version import Version
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
@@ -190,6 +190,7 @@ class Wikidata:
     def addDict(
         self,
         row: dict,
+        wpm:WikidataPropertyManager,
         mapDict: dict,
         itemId: Union[str, None] = None,
         lang: str = "en",
@@ -201,6 +202,7 @@ class Wikidata:
 
         Args:
             row(dict): the data row to add
+            wpm: WikidataPropertyManager,
             mapDict(dict): the mapping dictionary to use
             itemId: wikidata id of the item the data should be added to. If None a new item is created unless item id is provided in the record
             lang(str): the language for lookups
@@ -210,7 +212,7 @@ class Wikidata:
         Returns:
             (qid, errors)
         """
-        mappings = PropertyMapping.from_records(mapDict)
+        mappings = PropertyMapping.from_records(wpm,mapDict)
         return self.add_record(
             row,
             mappings,

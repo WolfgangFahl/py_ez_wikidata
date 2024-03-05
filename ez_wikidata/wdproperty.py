@@ -344,24 +344,23 @@ class PropertyMapping:
         propertyName (str): The human-readable name of the property.
         propertyId (str): The Wikidata property ID (e.g., "P31").
         propertyType (str): The type of the property as a string; converted to an enum in post-init.
-        property_type_enum (WdDatatype): The enum representation of the property type, initialized based on propertyType.
         qualifierOf (Optional[str]): Specifies if the property is a qualifier of another property.
         valueLookupType (Optional[Any]): The type (instance of/P31) of the property value for lookup if the value is not already a QID.
         value (Optional[Any]): The default value to set for the property.
         varname (Optional[str]): An optional variable name for internal use.
-
+        property_type_enum (WdDatatype): The enum representation of the property type, initialized based on propertyType.
+   
     The __post_init__ method ensures the propertyType is correctly interpreted and stored as both a string and an enum.
     """
+    column: Union[str,None]  # if None, the value is used
     propertyName: str
     propertyId: str
-    propertyType: str
-    
-    #property_type_enum: WdDatatype=field(init=False)
-    column: Optional[str]=None  # if None, the value is used
+    propertyType: str    
     qualifierOf: str = None
     valueLookupType: Any = None  # type (instance of/P31) of the property value → used to lookup the qid if property value if value is not already a qid
     value: Any = None  # set this value for the property
     varname: str = None
+    #property_type_enum: WdDatatype=field(init=False)
     
     def __post_init__(self):
         """
@@ -380,7 +379,7 @@ class PropertyMapping:
             
     @classmethod
     def from_records(
-        cls, prop_mapping_records: Dict[str, dict]
+        cls, wpm:WikidataPropertyManager, prop_mapping_records: Dict[str, dict]
     ) -> List["PropertyMapping"]:
         """
         convert given list of property mapping records to list of PropertyMappings
@@ -392,7 +391,7 @@ class PropertyMapping:
         """
         mappings = []
         for record in prop_mapping_records.values():
-            mapping = PropertyMapping.from_record(record)
+            mapping = PropertyMapping.from_record(wpm,record)
             mappings.append(mapping)
         return mappings
 
@@ -506,9 +505,11 @@ class PropertyMapping:
     ) -> Dict[str, List["PropertyMapping"]]:
         """
         Get a lookup for a property and all its qualifier
+        
         Args:
             properties: property mappings to generate the lookup from
-         Returns:
+        
+        Returns:
              dict as property qualifier lookup
         """
         res = dict()

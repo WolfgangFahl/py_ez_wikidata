@@ -384,13 +384,22 @@ class TestWikidata(BaseTest):
                 value="Q1143604",
             ),
             PropertyMapping(
-                "short name", "short name", "P95227", propertyType=WdDatatype.text
+                "short name", 
+                "short name", 
+                "P95227", 
+                propertyType=WdDatatype.text
             ),
             PropertyMapping(
-                "pubDate", "publication date", "P95226", propertyType=WdDatatype.date
+                "pubDate", 
+                "publication date", 
+                "P95226", 
+                propertyType=WdDatatype.date
             ),
             PropertyMapping(
-                "url", "described at URL", "P95231", propertyType=WdDatatype.url
+                "url", 
+                "described at URL", 
+                "P95231", 
+                propertyType=WdDatatype.url
             ),
             PropertyMapping(
                 "language of work or name",
@@ -399,7 +408,11 @@ class TestWikidata(BaseTest):
                 propertyType=WdDatatype.itemid,
                 qualifierOf="url",
             ),
-            PropertyMapping("urn", "URN-NBN", "P95232", propertyType=WdDatatype.extid),
+            PropertyMapping(
+                "urn", 
+                "URN-NBN", 
+                "P95232", 
+                propertyType=WdDatatype.extid),
         ]
         record = {
             "label": str(uuid.uuid4()),

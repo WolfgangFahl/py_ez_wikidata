@@ -622,6 +622,7 @@ class TestWikidata(BaseTest):
 
     def test_convert_to_yaml(self):
         """
+        test converting the PropertyMappings to YAML
         """
         sb_dict = {
             'text_field': WikidataSandboxProperties.TEXT,
@@ -639,7 +640,8 @@ class TestWikidata(BaseTest):
         )
         
         yaml_str=pm.to_yaml()
-        print(yaml_str)
+        if self.debug:
+            print(yaml_str)
 
 class WikidataSandboxProperties:
     """

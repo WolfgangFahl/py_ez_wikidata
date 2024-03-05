@@ -320,7 +320,7 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
             property_id(str): a property ID e.g. "P6375"
             lang(str): the language for the label
         """
-        properties = self.get_properties_by_ids([property_id], lang)
+        properties = self.get_properties_by_ids(property_id)
         prop_count = len(properties)
         if prop_count == 1:
             return list(properties.values())[0]

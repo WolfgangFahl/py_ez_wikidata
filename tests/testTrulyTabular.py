@@ -138,7 +138,6 @@ class TestTrulyTabular(unittest.TestCase):
                 wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint)
                 prop_dict= wpm.get_properties_by_ids(
                     propertyIds, 
-                    lang="en"
                 )
                 for i, prop in enumerate(prop_dict.values()):
                     if debug:

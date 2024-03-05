@@ -20,16 +20,23 @@ class TestWikidataProperties(BaseTest):
         super().setUp(debug, profile)
         self.endpoint_url="https://qlever.cs.uni-freiburg.de/api/wikidata"
         self.sparql = SPARQL(self.endpoint_url)
-        self.wpm=WikidataPropertyManager.get_instance()
+        # english must be first!
+        self.langs=["en","zh","hi","de","fr","ar","es","bn","ru"]
+        self.wpms={}
+        for lang in self.langs:
+            self.wpms[lang]=WikidataPropertyManager.get_instance(lang=lang)
         
     def test_WikidataPropertiesManager(self):
         """
         test the WikidataPropertyManager
         """
-        langs=["de","en","fr"]
-        for lang in langs:
-            self.assertTrue(lang in self.wpm.props)
-            self.assertTrue(len(self.wpm.props[lang])>5000)
+        debug=self.debug
+        for lang in self.langs:
+            self.assertTrue(lang in self.wpms)
+            wpm=self.wpms[lang]
+            if debug:
+                print(f"There are {len(wpm.props)} properties for lang {lang}")
+            self.assertTrue(len(wpm.props)>200)
             
         
     def test_wikidata_datatypes(self):

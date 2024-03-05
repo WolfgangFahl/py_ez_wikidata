@@ -45,13 +45,14 @@ class Wikidata:
     TEST_WD_URL = "https://test.wikidata.org"
     WD_URL = "https://www.wikidata.org"
 
-    def __init__(self, baseurl: str = None, debug: bool = False):
+    def __init__(self, baseurl: str = None,wpm:WikidataPropertyManager=None,debug: bool = False):
         """
         Constructor
 
         Args:
             baseurl(str): the baseurl of the wikibase to use
             debug(bool): if True output debug information
+            wpm(WikidataPropertymanager): 
         """
         if baseurl is None:
             baseurl = self.WD_URL
@@ -61,6 +62,9 @@ class Wikidata:
         self.login = None
         self.user = None
         self._wbi = None
+        if wpm is None:
+            wpm=WikidataPropertyManager.get_instance()
+        self.wpm=wpm
 
     @property
     def wbi(self) -> WikibaseIntegrator:
@@ -190,7 +194,6 @@ class Wikidata:
     def addDict(
         self,
         row: dict,
-        wpm:WikidataPropertyManager,
         mapDict: dict,
         itemId: Union[str, None] = None,
         lang: str = "en",
@@ -202,7 +205,6 @@ class Wikidata:
 
         Args:
             row(dict): the data row to add
-            wpm: WikidataPropertyManager,
             mapDict(dict): the mapping dictionary to use
             itemId: wikidata id of the item the data should be added to. If None a new item is created unless item id is provided in the record
             lang(str): the language for lookups
@@ -212,7 +214,7 @@ class Wikidata:
         Returns:
             (qid, errors)
         """
-        mappings = PropertyMapping.from_records(wpm,mapDict)
+        mappings = PropertyMapping.from_records(self.wpm,mapDict)
         return self.add_record(
             row,
             mappings,

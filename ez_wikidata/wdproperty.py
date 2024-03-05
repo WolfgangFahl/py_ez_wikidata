@@ -4,7 +4,7 @@ Created on 02.03.2024-03-02
 @author: wf
 """
 import os
-from dataclasses import dataclass,field, InitVar
+from dataclasses import dataclass,field
 from enum import Enum, auto
 from lodstorage.sparql import SPARQL
 from lodstorage.yamlable import lod_storable
@@ -127,13 +127,12 @@ class WikidataProperty:
     plabel: str # the label of the property
     description: str  # Description of the property
     type_name: str # the type name
-    lang: str="en" # the language 
     reverse: bool = False  # Indicates if the property is used in reverse direction
     # Variables initialized in __post_init__
-    varname: str = field(init=False)
-    valueVarname: str = field(init=False)
-    labelVarname: str = field(init=False)
-    ptype: WdDatatype = field(init=False) 
+    #varname: str = field(init=False)
+    #valueVarname: str = field(init=False)
+    #labelVarname: str = field(init=False)
+    #ptype: WdDatatype = field(init=False) 
     
     def __post_init__(self):
         """
@@ -164,16 +163,16 @@ class WikidataPropertyManager:
     """
     handle Wikidata Properties
     """
-    props: Dict[str, Dict[str, WikidataProperty]] = field(default_factory=dict)
+    lang:str
+    props: Dict[str, WikidataProperty] = field(default_factory=dict)
   
     def __post_init__(self):
         """
         initialize the lookups
         """
         self.props_by_id={}
-        for lang, properties in self.props.items():
-            self.props_by_id[lang] = {prop.pid: prop for prop in properties.values()}
-
+        for _plabel,prop in self.props.items():
+            self.props_by_id[prop.pid]=prop
       
     def fetch_props_for_lang(self,endpoint_url:str="https://query.wikidata.org/sparql",lang:str="en"):
         """
@@ -197,66 +196,64 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
         """
         results = self.sparql.queryAsListOfDicts(query)
         # Initialize or clear the dictionary for the specified language
-        self.props[lang] = {}
+        self.props = {}
 
         # Populate the dictionary
         for result in results:
             pid = result['property'].split('/')[-1]  # Extracts ID from URI
             type_name=result['wbType'].split("#")[-1]
             plabel=result['propertyLabel']
-            self.props[lang][plabel] = WikidataProperty(
+            self.props[plabel] = WikidataProperty(
                 pid=pid,
                 plabel=plabel,
                 description=result['propertyDescription'],
                 type_name=type_name,
-                lang=lang
             )
-        return self.props[lang]
+        return self.props
     
     @classmethod
     def get_instance(cls,
         endpoint_url:str="https://qlever.cs.uni-freiburg.de/api/wikidata",
-        langs=["en","de","fr"]):
+        lang:str="en"):
         """
         initialize the wikidata property manager
         
         Args:
             endpoint_url(str): the SPARQL endpoint to query if there is no cache available
-            langs(List[str]): the list of languages to query propery labels and descriptions for
+            lang(str): the languages to query propery labels and descriptions for
         """
-        cache_path = cls.get_cache_path()
+        cache_path = cls.get_cache_path(lang)
         # Check if cache file exists and is not empty
         if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
             wpm=cls.from_cache(cache_path)
         else:
-            wpm=cls.from_endpoint(endpoint_url, langs)
-            wpm.store_to_cache()
+            wpm=cls.from_endpoint(endpoint_url, lang)
+            wpm.store_to_cache(cache_path)
         return wpm
     
     @classmethod
-    def get_cache_path(cls)->str:
+    def get_cache_path(cls,lang:str="en")->str:
         home = str(Path.home())
         cache_dir = f"{home}/.wikidata"
         os.makedirs(cache_dir,exist_ok=True)
-        cache_path= f"{cache_dir}/wikidata_properties.json"
+        cache_path= f"{cache_dir}/wikidata_properties_{lang}.json"
         return cache_path
     
     @classmethod
-    def from_endpoint(cls,endpoint_url:str,langs:List[str]):
-        wpm=WikidataPropertyManager()
-        for lang in langs:
-            wpm.fetch_props_for_lang(endpoint_url=endpoint_url,lang=lang)
+    def from_endpoint(cls,endpoint_url:str,lang:str):
+        wpm=WikidataPropertyManager(lang=lang)
+        wpm.fetch_props_for_lang(endpoint_url=endpoint_url,lang=lang)
         return wpm
            
-    def store_to_cache(self, cache_path: str = None):
+    def store_to_cache(self, cache_path: str):
         """
         Stores the current state of the manager to a cache file.
 
         Args:
-            cache_path (str, optional): The path to the cache file. If None, the default cache path is used.
+            cache_path (str): The path to the cache file. If None, the default cache path is used.
         """
         if cache_path is None:
-            cache_path = WikidataPropertyManager.get_cache_path()
+            raise ValueError("cache_path  must be set to store_to_cache")
         #self.save_to_yaml_file(cache_path)
         self.save_to_json_file(cache_path)
 

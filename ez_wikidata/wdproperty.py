@@ -492,10 +492,14 @@ class PropertyMapping:
 
     def is_item_itself(self) -> bool:
         """
-        Returns true if the property mapping links to the existing item
+        Check if the property_type is an item
+        
+        Returns:
+            bool: True if the property mapping links to the existing item 
         """
-        return self.property_type_enum == WdDatatype.item
-
+        is_item_id= self.property_type_enum is WdDatatype.itemid
+        return is_item_id
+    
     @classmethod
     def get_qualifier_lookup(
         cls, properties: List["PropertyMapping"]

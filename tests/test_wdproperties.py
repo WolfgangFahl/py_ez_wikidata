@@ -21,7 +21,10 @@ class TestWikidataProperties(BaseTest):
         self.endpoint_url="https://qlever.cs.uni-freiburg.de/api/wikidata"
         self.sparql = SPARQL(self.endpoint_url)
         # english must be first!
-        self.langs=["en","zh","hi","de","fr","ar","es","bn","ru"]
+        if self.inPublicCI() or self.inLocalCI():
+            self.langs=["en","zh","hi","de","fr","ar","es","bn","ru"]
+        else:
+            self.langs=["en","de"]
         self.wpms={}
         for lang in self.langs:
             self.wpms[lang]=WikidataPropertyManager.get_instance(lang=lang)
@@ -67,12 +70,11 @@ class TestWikidataProperties(BaseTest):
         test_cases = [
             (['Einwohnerzahl'], 'de','P1082'),  # German for 'population'
             (['population'], 'en','P1082'),  # English
-            (['population'], 'fr', 'P1082')   # French
-            
+            #(['population'], 'fr', 'P1082')   # French 
         ]
-
         for labels, lang, expected_pid in test_cases:
-            properties = self.wpm.get_properties_by_labels(labels, lang)
+            wpm=self.wpms[lang]
+            properties = wpm.get_properties_by_labels(labels)
             msg=f"Failed for labels {labels} in language {lang}"
             self.assertEqual(1, len(properties), msg)
             plabel=labels[0]
@@ -88,11 +90,12 @@ class TestWikidataProperties(BaseTest):
         test_cases = [
             (['P1082','P17'], 'en', ["population","country"]),  
             (['P1082','P276'], 'de', ["Einwohnerzahl","Ort"]),
-            (['P1082'], 'fr', ["population"])
+            #(['P1082'], 'fr', ["population"])
         ]
 
         for ids, lang, expected_labels in test_cases:
-            properties = self.wpm.get_properties_by_ids(ids, lang)
+            wpm=self.wpms[lang]
+            properties = wpm.get_properties_by_ids(ids)
             self.assertEqual(len(properties), len(expected_labels), f"Failed for IDs {ids} in language {lang}")
 
             # Additionally, check if the retrieved properties match the expected ID

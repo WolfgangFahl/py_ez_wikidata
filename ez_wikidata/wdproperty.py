@@ -176,6 +176,8 @@ class WikidataPropertyManager:
             self.props_by_id[prop.pid]=prop
         if self.lang!="en":
             self.wpm_en=WikidataPropertyManager.get_instance("en")
+        else:
+            self.wpm_en=self
             
       
     def fetch_props_for_lang(self,endpoint_url:str="https://query.wikidata.org/sparql",lang:str="en"):
@@ -312,13 +314,12 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
                 matched_properties[pid] = self.wpm_en.props_by_id[pid]
         return matched_properties
     
-    def get_property_by_id(self, property_id: str, lang: str = "en") -> WikidataProperty:
+    def get_property_by_id(self, property_id: str) -> WikidataProperty:
         """
         lookup a WikidataProperty for the given property_id
 
         Args:
             property_id(str): a property ID e.g. "P6375"
-            lang(str): the language for the label
         """
         properties = self.get_properties_by_ids(property_id)
         prop_count = len(properties)

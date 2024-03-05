@@ -34,8 +34,8 @@ class BaseTest(TestCase):
         are we running in a public Continuous Integration Environment?
         """
         publicCI = getpass.getuser() in ["travis", "runner"]
-        jenkins = "JENKINS_HOME" in os.environ
-        return publicCI or jenkins
+        #jenkins = "JENKINS_HOME" in os.environ
+        return publicCI 
 
 
 class Profiler:

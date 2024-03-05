@@ -13,7 +13,7 @@ class TestWikidataProperties(BaseTest):
     test the Wikidata properties handling
     """
 
-    def setUp(self, debug=True, profile=True):
+    def setUp(self, debug=False, profile=True):
         """
         setUp the tests cases
         """
@@ -60,7 +60,8 @@ class TestWikidataProperties(BaseTest):
             wb_type_name=result["wbType"]
             wb_type=WdDatatype.from_wb_type_name(wb_type_name)
             count=result["count"]
-            print(f"{wb_type_name}:{wb_type}  #{count}")
+            if self.debug:
+                print(f"{wb_type_name}:{wb_type}  #{count}")
             
     def test_get_properties_by_labels(self):
         """

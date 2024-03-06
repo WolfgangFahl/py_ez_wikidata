@@ -1,7 +1,7 @@
 import unittest
 import uuid
 from datetime import datetime
-
+import json
 from lodstorage.lod import LOD
 from ez_wikidata.wikidata import (
     PropertyMapping,
@@ -242,6 +242,7 @@ class TestWikidata(BaseTest):
                     print(f"{index+1}:{str(error)}")
             else:
                 print(f"created {result.qid}")
+                print(result.pretty_item_json)
         self.assertEqual(0, len(result.errors))
 
     @unittest.skipIf(

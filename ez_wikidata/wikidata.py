@@ -40,13 +40,21 @@ class WikidataResult:
     """
     a class for handling a wikidata result
     """
-    item=ItemEntity
+    item:ItemEntity
     errors:Dict[str,Exception]
-    debug:bool=False
+    debug:Optional[bool]=False
     
     @property
     def qid(self)->str:
         return self.item.id
+    
+    @property
+    def pretty_item_json(self,indent:int=2) -> str:
+        """Returns a pretty-printed JSON string of the item."""
+        json_str = self.item.get_json()  # Assuming get_json() returns a JSON string representation of the item
+        item_dict = json.loads(json_str)
+        pretty_json=json.dumps(item_dict, indent=indent)
+        return pretty_json
     
 class Wikidata:
     """
@@ -474,7 +482,7 @@ class Wikidata:
                     item = item.write(summary=summary)
                 except Exception as ex:
                     errors["write failed"] = ex
-        result=WikidataResult(item,errors,debug=self.debug)
+        result=WikidataResult(item=item,errors=errors,debug=self.debug)
         return result
 
     def _get_statement_for_property(

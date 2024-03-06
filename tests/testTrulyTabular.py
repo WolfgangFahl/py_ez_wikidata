@@ -12,8 +12,7 @@ from lodstorage.query import Endpoint, Query, QuerySyntaxHighlight
 from lodstorage.sparql import SPARQL
 from ez_wikidata.trulytabular import TrulyTabular
 from ez_wikidata.wikidata import WikidataItem
-from ez_wikidata.wdproperty import WikidataProperty, WikidataPropertyManager
-
+from ez_wikidata.wdproperty import WikidataPropertyManager
 
 class TestTrulyTabular(unittest.TestCase):
     """
@@ -152,7 +151,7 @@ class TestTrulyTabular(unittest.TestCase):
         try getting items by label
         """
         debug = self.debug
-        debug = True
+        #debug = True
         qLabels = [
             "academic conference",
             "scientific conference series",
@@ -370,8 +369,10 @@ class TestTrulyTabular(unittest.TestCase):
             wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint)
             try:
                 tt = TrulyTabular(qid, debug=debug)
+                # P571: inception, P6375: street address
                 for pid in ["P571", "P6375"]:
                     wdProperty = wpm.get_property_by_id(pid)
+                    self.assertIsNotNone(wdProperty)
                     #
                     itemCount, _itemCountQuery = tt.count()
                     statsRow = tt.genWdPropertyStatistic(wdProperty, itemCount)

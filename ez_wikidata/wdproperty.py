@@ -35,6 +35,7 @@ class WdDatatype(Enum):
     tabular_data = auto()  # TabularData: 6 occurrences
     geoshape = auto()  # GeoShape: 3 occurrences
     # Special cases:
+    item = auto()  # Item: Special case
     year = auto()  # Year: Special case
     date = auto()  # Date: Special case
     
@@ -495,7 +496,7 @@ class PropertyMapping:
         Returns:
             bool: True if the property mapping links to the existing item 
         """
-        is_item_id= self.property_type_enum == WdDatatype.itemid
+        is_item_id= self.property_type_enum == WdDatatype.item
         return is_item_id
     
     @classmethod

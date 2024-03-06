@@ -331,6 +331,7 @@ class TestWikidata(BaseTest):
         BaseTest.inPublicCI(),
         "Tests creating and modifying items. To run in CI setup credentials",
     )
+    
     def test_addDict(self):
         """
         test addDict

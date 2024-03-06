@@ -4,7 +4,7 @@ Created on 2024-03-03
 @author: wf
 '''
 from tests.basetest import BaseTest
-from ez_wikidata.wdproperty import WikidataPropertyManager, WdDatatype
+from ez_wikidata.wdproperty import WikidataPropertyManager, WdDatatype, PropertyMapping
 from ez_wikidata.prefixes import Prefixes
 from lodstorage.sparql import SPARQL
 
@@ -41,7 +41,6 @@ class TestWikidataProperties(BaseTest):
                 print(f"There are {len(wpm.props)} properties for lang {lang}")
             self.assertTrue(len(wpm.props)>200)
             
-        
     def test_wikidata_datatypes(self):
         """
         test available wikidata datatypes
@@ -106,3 +105,19 @@ class TestWikidataProperties(BaseTest):
                 self.assertEqual(prop.pid, prop_id, f"Retrieved property ID {prop.pid} does not match expected {prop_id}")
                 self.assertEqual(prop.plabel,expected_labels[index])
                 index+=1
+                
+    def test_is_qualifier_is_item(self):
+        """
+        test is_qualifier and is_item_itself checks
+        """
+        pm=PropertyMapping(
+                "instanceof",
+                "instanceof",
+                "P95201",
+                propertyType=WdDatatype.itemid,
+                value="Q1143604",
+            )
+        is_qualifier=pm.is_qualifier()
+        is_item=pm.is_item_itself()
+        self.assertFalse(is_qualifier)
+        self.assertFalse(is_item)

@@ -40,20 +40,25 @@ class WikidataResult:
     """
     a class for handling a wikidata result
     """
-    item:ItemEntity
-    errors:Dict[str,Exception]
+    item:Optional[ItemEntity]=None
+    errors:Dict[str,Exception]=field(default_factory=dict)
+    qid: Optional[str] = None  
     msg:Optional[str]=None
     debug:Optional[bool]=False
     
-    @property
-    def qid(self)->str:
-        return self.item.id
+    def __post_init__(self):
+        # If qid is not provided, derive it from item
+        if self.qid is None and self.item:
+            self.qid = self.item.id
     
     @property
     def pretty_item_json(self,indent:int=2) -> str:
         """Returns a pretty-printed JSON string of the item."""
-        item_dict = self.item.get_json()  # Assuming get_json() returns a JSON string representation of the item
-        pretty_json=json.dumps(item_dict, indent=indent)
+        if self.item:
+            item_dict = self.item.get_json()  # Assuming get_json() returns a JSON string representation of the item
+            pretty_json=json.dumps(item_dict, indent=indent)
+        else:
+            pretty_json=self.qid
         return pretty_json
     
 class Wikidata:

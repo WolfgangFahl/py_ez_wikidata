@@ -42,6 +42,7 @@ class WikidataResult:
     """
     item:ItemEntity
     errors:Dict[str,Exception]
+    msg:Optional[str]=None
     debug:Optional[bool]=False
     
     @property

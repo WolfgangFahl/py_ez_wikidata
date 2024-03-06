@@ -321,7 +321,7 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
         Args:
             property_id(str): a property ID e.g. "P6375"
         """
-        properties = self.get_properties_by_ids(property_id)
+        properties = self.get_properties_by_ids([property_id])
         prop_count = len(properties)
         if prop_count == 1:
             return list(properties.values())[0]

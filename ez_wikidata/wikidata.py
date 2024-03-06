@@ -51,8 +51,7 @@ class WikidataResult:
     @property
     def pretty_item_json(self,indent:int=2) -> str:
         """Returns a pretty-printed JSON string of the item."""
-        json_str = self.item.get_json()  # Assuming get_json() returns a JSON string representation of the item
-        item_dict = json.loads(json_str)
+        item_dict = self.item.get_json()  # Assuming get_json() returns a JSON string representation of the item
         pretty_json=json.dumps(item_dict, indent=indent)
         return pretty_json
     

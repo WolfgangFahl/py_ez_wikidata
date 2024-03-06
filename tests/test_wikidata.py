@@ -8,6 +8,7 @@ from ez_wikidata.wikidata import (
     PropertyMappings,
     UrlReference,
     WdDatatype,
+    WikidataResult,
     Wikidata,
     WikidataItem,
 )
@@ -36,7 +37,7 @@ class TestWikidata(BaseTest):
     @property
     def test_wikidata(self) -> Wikidata:
         if self._test_wd is None:
-            wd = Wikidata(baseurl="https://test.wikidata.org")
+            wd = Wikidata(baseurl="https://test.wikidata.org",debug=self.debug)
             wd.loginWithCredentials()
             self._test_wd = wd
         return self._test_wd
@@ -46,7 +47,7 @@ class TestWikidata(BaseTest):
         lookup items
         """
         debug = self.debug
-        wd = Wikidata("https://www.wikidata.org", debug=True)
+        wd = Wikidata("https://www.wikidata.org", debug=self.debug)
         test_params = [
             ("USA", "Q3624078", "Q30"),
             ("ECIR", "Q47258130", "Q5412436"),
@@ -229,6 +230,19 @@ class TestWikidata(BaseTest):
             label_for_qids=True,
         )
         self.assertDictEqual(expected, actual)
+        
+    def check_add_result(self,result:WikidataResult):
+        """
+        check the result of an add operation
+        """
+        if result.debug:
+            if (len(result.errors)>0):
+                print("Errors")
+                for index,error in enumerate(result.errors.values()):
+                    print(f"{index+1}:{str(error)}")
+            else:
+                print(f"created {result.qid}")
+        self.assertEqual(0, len(result.errors))
 
     @unittest.skipIf(
         BaseTest.inPublicCI(),
@@ -261,7 +275,9 @@ class TestWikidata(BaseTest):
         tests add_record by creating an item in test.wikidata.org adding property values.
         Also tests adding property values to existing items.
         """
-        wd = Wikidata(baseurl="https://test.wikidata.org")
+        debug=self.debug
+        debug = True
+        wd = Wikidata(baseurl="https://test.wikidata.org",debug=debug)
         wd.loginWithCredentials()
         property_mappings = [
             WikidataSandboxProperties.TEXT,
@@ -291,21 +307,23 @@ class TestWikidata(BaseTest):
         }
 
         # test creating an item
-        qid, _ = wd.add_record(
-            record=record, property_mappings=property_mappings, write=True
+        result = wd.add_record(
+            record=record, 
+            property_mappings=property_mappings, 
+            write=True
         )
-        debug = True
-        if debug:
-            print(f"created {qid}")
-        actual = wd.get_record(qid, property_mappings=property_mappings)
+        self.check_add_result(result)
+        
+        actual = wd.get_record(result.qid, property_mappings=property_mappings)
         self.assertDictEqual(record, actual)
 
         # test modifying an item (not overwriting existing value)
         record["year"] = [record["year"], 2022]
-        qid, _ = wd.add_record(
-            {"year": 2022}, property_mappings=property_mappings, item_id=qid, write=True
+        result = wd.add_record(
+            {"year": 2022}, property_mappings=property_mappings, item_id=result.qid, write=True
         )
-        actual = wd.get_record(qid, property_mappings=property_mappings)
+        self.check_add_result(result)
+        actual = wd.get_record(result.qid, property_mappings=property_mappings)
         self.assertDictEqual(record, actual)
 
     @unittest.skipIf(
@@ -316,7 +334,9 @@ class TestWikidata(BaseTest):
         """
         test addDict
         """
-        wd = Wikidata(baseurl="https://test.wikidata.org")
+        debug=self.debug
+        debug=True
+        wd = Wikidata(baseurl="https://test.wikidata.org",debug=debug)
         wd.loginWithCredentials()
         legacy_mappings = [
             {
@@ -423,8 +443,9 @@ class TestWikidata(BaseTest):
             "urn": str(uuid.uuid4()),
         }
         mapDict, _ = LOD.getLookup(legacy_mappings, "PropertyId")
-        qid, _ = wd.addDict(record, mapDict=mapDict, write=True)
-        actual = wd.get_record(qid, mappings)
+        result = wd.addDict(record, mapDict=mapDict, write=True)
+        self.check_add_result(result)
+        actual = wd.get_record(result.qid, mappings)
         record["instanceof"] = "Q377"
         self.assertEqual(record, actual)
 
@@ -463,10 +484,13 @@ class TestWikidata(BaseTest):
             "country_id": expected_qid
         }
 
-        wd = Wikidata(baseurl="https://test.wikidata.org")
+        debug=self.debug
+        debug=True
+        wd = Wikidata(baseurl="https://test.wikidata.org",debug=debug)
         wd.loginWithCredentials()
-        qid, _ = wd.add_record(record, mappings, write=True)
-        actual = wd.get_record(qid, mappings)
+        result = wd.add_record(record, mappings, write=True)
+        self.check_add_result(result)
+        actual = wd.get_record(result.qid, mappings)
         self.assertDictEqual(expected_record, actual)
 
     @unittest.skipIf(BaseTest.inPublicCI(), "Tests creating statement with two values")
@@ -493,11 +517,12 @@ class TestWikidata(BaseTest):
             "item_id": ["Q377", "Q344"],
             "identifier": [str(uuid.uuid4()), str(uuid.uuid4())],
         }
-        qid, _ = self.test_wikidata.add_record(
+        result= self.test_wikidata.add_record(
             record, property_mappings=property_mappings, write=True
         )
+        self.check_add_result(result)
         actual_record = self.test_wikidata.get_record(
-            qid, property_mappings=property_mappings
+            result.qid, property_mappings=property_mappings
         )
         self.assertDictEqual(record, actual_record)
 

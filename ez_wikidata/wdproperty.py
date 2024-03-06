@@ -495,7 +495,7 @@ class PropertyMapping:
         Returns:
             bool: True if the property mapping links to the existing item 
         """
-        is_item_id= self.property_type_enum is WdDatatype.itemid
+        is_item_id= self.property_type_enum == WdDatatype.itemid
         return is_item_id
     
     @classmethod

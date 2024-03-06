@@ -13,7 +13,7 @@ import typing
 from dataclasses import dataclass, field
 from itertools import groupby
 from pathlib import Path
-from typing import  List, Optional, Union
+from typing import  Dict,List, Optional, Union
 
 import dateutil.parser
 from lodstorage.sparql import SPARQL
@@ -35,6 +35,19 @@ from wikibaseintegrator.models import Claim, Reference, Snak
 from wikibaseintegrator.wbi_config import config as wbi_config
 from wikibaseintegrator.wbi_enums import WikibaseDatePrecision, WikibaseRank
 
+@dataclass
+class WikidataResult:
+    """
+    a class for handling a wikidata result
+    """
+    item=ItemEntity
+    errors:Dict[str,Exception]
+    debug:bool=False
+    
+    @property
+    def qid(self)->str:
+        return self.item.id
+    
 class Wikidata:
     """
     wikidata access
@@ -199,7 +212,7 @@ class Wikidata:
         lang: str = "en",
         write: bool = False,
         ignoreErrors: bool = False,
-    ) -> (str, dict):
+    ) -> WikidataResult:
         """
         add the given row mapping with the given map Dict
 
@@ -212,7 +225,7 @@ class Wikidata:
             ignoreErrors(bool): if True ignore errors
 
         Returns:
-            (qid, errors)
+            WikiDataResult: the result of the operation
         """
         mappings = PropertyMapping.from_records(self.wpm,mapDict)
         return self.add_record(
@@ -404,7 +417,7 @@ class Wikidata:
         ignore_errors: bool = False,
         summary: str = None,
         reference: Reference = None,
-    ) -> (str, dict):
+    ) -> WikidataResult:
         """
         add the given row mapping with the given map Dict
 
@@ -429,12 +442,15 @@ class Wikidata:
         if item_mapping is not None:
             if item_id is None:
                 item_id = record.get(item_mapping.column, None)
-        # get the properties excluding the item column
-        properties = [
-            pm
-            for pm in property_mappings
-            if not pm.is_qualifier() and not pm.is_item_itself()
-        ]
+        # get the relevant properties 
+        properties = []
+        for pm in property_mappings:
+            if not pm.is_qualifier() and not pm.is_item_itself():
+                properties.append(pm)
+            else:
+                # breakpoint to debug ignored properties
+                pass
+            
         for prop in properties:
             qualifier_mappings = qualifier_lookup.get(prop.column, None)
             prop_claims, claim_errors = self._get_statement_for_property(
@@ -451,14 +467,15 @@ class Wikidata:
         if label:
             item.labels.set(language=lang, value=label)
         if description:
-            item.descriptions.set(language=lang, value=description)
+            item.descriptions.set(language=lang, value=description)            
         if write:
             if len(errors) == 0 or ignore_errors:
                 try:
                     item = item.write(summary=summary)
                 except Exception as ex:
                     errors["write failed"] = ex
-        return item.id, errors
+        result=WikidataResult(item,errors,debug=self.debug)
+        return result
 
     def _get_statement_for_property(
         self,

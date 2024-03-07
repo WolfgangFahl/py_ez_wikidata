@@ -6,13 +6,14 @@ Created on 2022-04-30
 import pprint
 from typing import Dict, List
 from ez_wikidata.wikidata import PropertyMapping, WdDatatype
+from ez_wikidata.wdproperty import WikidataPropertyManager
 
 class WikibaseQuery(object):
     """
     a Query for Wikibase
     """
 
-    def __init__(self, entity: str, debug: bool = False):
+    def __init__(self, entity: str,wpm:WikidataPropertyManager=None,debug: bool = False):
         """
         Constructor
 
@@ -22,6 +23,9 @@ class WikibaseQuery(object):
         """
         self.debug = debug
         self.entity = entity
+        if wpm is None:
+            wpm=WikidataPropertyManager.get_instance()
+        self.wpm=wpm    
         self.propertiesByName = {}
         self.propertiesById = {}
         self.propertiesByVarname = {}
@@ -35,7 +39,7 @@ class WikibaseQuery(object):
         Returns:
             List[PropertyMapping]: list of PropertyMappings
         """
-        prop_maps = PropertyMapping.from_records(self.propertiesByColumn)
+        prop_maps = self.wpm.get_mappings_for_records(self.propertiesByColumn)
         return prop_maps
 
     def get_item_mapping(self) -> PropertyMapping:

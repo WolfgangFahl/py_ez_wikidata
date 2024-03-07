@@ -389,7 +389,7 @@ class TestTrulyTabular(unittest.TestCase):
             {
                 "naive": True,
                 "qid": "Q2020153",  # academic conference
-                "subclassPredicate": "wdt:P31",
+                "search_predicate": "wdt:P31",
                 "propertyIdMap": {
                     "P1813": ["label"],
                     "P17": ["label"],
@@ -400,7 +400,7 @@ class TestTrulyTabular(unittest.TestCase):
             {
                 "naive": False,
                 "qid": "Q2020153",  # academic conference
-                "subclassPredicate": "wdt:P31",
+                "search_predicate": "wdt:P31",
                 "propertyIdMap": {
                     "P1813": ["sample"],
                     "P17": ["sample"],
@@ -411,7 +411,7 @@ class TestTrulyTabular(unittest.TestCase):
             {
                 "naive": False,
                 "qid": "Q2020153",  # academic conference
-                "subclassPredicate": "wdt:P31",
+                "search_predicate": "wdt:P31",
                 "propertyIdMap": {
                     "P1813": ["count", "list"],
                     "P17": ["sample", "ignore"],
@@ -427,7 +427,7 @@ class TestTrulyTabular(unittest.TestCase):
             {
                 "naive": False,
                 "qid": "Q1667921",  # novel series
-                "subclassPredicate": "wdt:P31",
+                "search_predicate": "wdt:P31",
                 "propertyIdMap": {
                     "P50": ["sample", "ignore"],  # author
                     "P136": ["sample", "ignore"],  # genre
@@ -438,7 +438,7 @@ class TestTrulyTabular(unittest.TestCase):
             {
                 "naive": False,
                 "qid": "Q1667921",  # novel series
-                "subclassPredicate": "wdt:P31",
+                "search_predicate": "wdt:P31",
                 "propertyIdMap": {
                     "P50": ["sample", "ignore", "label"],  # author
                     "P136": ["sample", "ignore", "label"],  # genre
@@ -448,7 +448,7 @@ class TestTrulyTabular(unittest.TestCase):
             },
             {
                 "naive": False,
-                "subclassPredicate": "wdt:P279*/wdt:P31*",
+                "search_predicate": "wdt:P279*/wdt:P31*",
                 "qid": "Q8063",  # rock
                 "propertyIdMap": {
                     "P18": ["sample"],  # image
@@ -464,14 +464,14 @@ class TestTrulyTabular(unittest.TestCase):
             qid = config["qid"]
             naive = config["naive"]
             propertyIdMap = config["propertyIdMap"]
-            subclassPredicate = config["subclassPredicate"]
+            search_predicate = config["search_predicate"]
             expectedList = config["expected"]
 
             # create a truly tabular analysis
             tt = TrulyTabular(
                 qid,
                 propertyIds=list(propertyIdMap.keys()),
-                subclassPredicate=subclassPredicate,
+                search_predicate=search_predicate,
             )
             varname = tt.item.itemVarname
             # generate a SPARQL Query
@@ -481,7 +481,7 @@ class TestTrulyTabular(unittest.TestCase):
                 pprint(config)
                 print(f"{sparqlQuery}")
             # all queries should have basic graph patterns for the subclass
-            self.assertTrue(f"?{varname} {subclassPredicate} wd:{qid}." in sparqlQuery)
+            self.assertTrue(f"?{varname} {search_predicate} wd:{qid}." in sparqlQuery)
             # and for the properties
             for pid in propertyIdMap.keys():
                 self.assertTrue(f"?{varname} wdt:{pid}" in sparqlQuery)

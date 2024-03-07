@@ -180,6 +180,23 @@ class WikidataPropertyManager:
         else:
             self.wpm_en=self
             
+    def get_mappings_for_records(
+        self, prop_mapping_records: Dict[str, dict]
+    ) -> List["PropertyMapping"]:
+        """
+        convert given list of property mapping records to list of PropertyMappings
+        Args:
+            prop_mapping_records: records to convert
+
+        Returns:
+            property mappings
+        """
+        mappings = []
+        for record in prop_mapping_records.values():
+            mapping = PropertyMapping.from_record(self,record)
+            mappings.append(mapping)
+        return mappings
+            
       
     def fetch_props_for_lang(self,endpoint_url:str="https://query.wikidata.org/sparql",lang:str="en"):
         """
@@ -376,24 +393,6 @@ class PropertyMapping:
             self.property_type_enum = self.propertyType
             # Ensure propertyType is stored as the correct string representation of the enum for YAML compatibility
             self.propertyType = self.property_type_enum.name
-            
-    @classmethod
-    def from_records(
-        cls, wpm:WikidataPropertyManager, prop_mapping_records: Dict[str, dict]
-    ) -> List["PropertyMapping"]:
-        """
-        convert given list of property mapping records to list of PropertyMappings
-        Args:
-            prop_mapping_records: records to convert
-
-        Returns:
-            property mappings
-        """
-        mappings = []
-        for record in prop_mapping_records.values():
-            mapping = PropertyMapping.from_record(wpm,record)
-            mappings.append(mapping)
-        return mappings
 
     @classmethod
     def get_legacy_mapping(cls) -> dict:

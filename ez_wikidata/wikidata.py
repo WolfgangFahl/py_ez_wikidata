@@ -240,7 +240,7 @@ class Wikidata:
         Returns:
             WikiDataResult: the result of the operation
         """
-        mappings = PropertyMapping.from_records(self.wpm,mapDict)
+        mappings = self.wpm.get_mappings_for_records(mapDict)
         return self.add_record(
             row,
             mappings,

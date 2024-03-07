@@ -28,7 +28,7 @@ class TrulyTabular(object):
         itemQid,
         propertyLabels: list = [],
         propertyIds: list = [],
-        subclassPredicate="wdt:P31",
+        search_predicate="wdt:P31",
         where: str = None,
         endpointConf=None,
         lang="en",
@@ -41,7 +41,7 @@ class TrulyTabular(object):
             itemQid(str): wikidata id of the type to analyze
             propertyLabels(list): a list of labels of properties to be considered
             propertyIds(list): a list of ids of properties to be considered
-            subclassPredicate(str): the subclass Predicate to use
+            search_predicate(str): the search predicate to use e.g. instanceof / subclass of
             where(str): extra where clause for instance selection (if any)
             endpoint(str): the url of the SPARQL endpoint to be used
         """
@@ -53,7 +53,7 @@ class TrulyTabular(object):
         self.wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint,lang=lang)
         self.sparql = SPARQL(endpointConf.endpoint, method=self.endpointConf.method)
         self.sparql.debug = self.debug
-        self.subclassPredicate = subclassPredicate
+        self.search_predicate = search_predicate
         self.where = f"\n  {where}" if where is not None else ""
         self.lang = lang
         self.item = WikidataItem(
@@ -88,7 +88,7 @@ SELECT (COUNT (DISTINCT ?item) AS ?count)
 WHERE
 {{
   # instance of {self.item.qlabel}
-  ?item {self.subclassPredicate} wd:{self.item.qid}.{self.where}
+  ?item {self.search_predicate} wd:{self.item.qid}.{self.where}
 }}"""
         try:
             count = self.sparql.getValue(query, "count")
@@ -196,7 +196,7 @@ SELECT ?{item.itemVarname} ?{item.labelVarname}"""
         sparqlQuery += f"""
 WHERE {{
   # instanceof {item.qid}:{item.qlabel}
-  ?{item.itemVarname} {self.subclassPredicate} wd:{item.qid}.
+  ?{item.itemVarname} {self.search_predicate} wd:{item.qid}.
   # label
   ?{item.itemVarname} rdfs:label ?{item.labelVarname}.  
   FILTER (LANG(?{item.labelVarname}) = "{lang}").
@@ -254,7 +254,7 @@ WHERE {{
             whereClause(str): an extra WhereClause to use
         """
         if whereClause is None:
-            whereClause = f"?item {self.subclassPredicate} wd:{self.itemQid}"
+            whereClause = f"?item {self.search_predicate} wd:{self.itemQid}"
             if self.endpointConf.database != "qlever":
                 whereClause += ";?p ?id"
         whereClause += "."
@@ -322,7 +322,7 @@ ORDER BY DESC (?count)
 WHERE
 {{
   # instance of {self.item.qlabel}
-  ?item {self.subclassPredicate} wd:{self.itemQid}.{self.where}
+  ?item {self.search_predicate} wd:{self.itemQid}.{self.where}
   ?item rdfs:label ?itemLabel.
   FILTER (LANG(?itemLabel) = "{self.lang}").
   # {propertyLabel}

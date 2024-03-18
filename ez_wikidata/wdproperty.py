@@ -441,7 +441,7 @@ class PropertyMapping:
                 pid=record.get("propertyId")
                 props=wpm.get_properties_by_ids([pid])
                 if len(props)==1:
-                    prop=props[0]
+                    prop=list(props.values())[0]
                     property_type=prop.ptype
         mapping = PropertyMapping(
             column=record.get("column", None),

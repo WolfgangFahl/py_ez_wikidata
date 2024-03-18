@@ -439,8 +439,8 @@ class PropertyMapping:
                 property_type = WdDatatype[property_type]
             else:
                 pid=record.get("propertyId")
-                props=wpm.get_properties_by_ids([pid], "en")
-                if len(props==1):
+                props=wpm.get_properties_by_ids([pid])
+                if len(props)==1:
                     prop=props[0]
                     property_type=prop.ptype
         mapping = PropertyMapping(

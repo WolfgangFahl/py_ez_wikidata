@@ -17,7 +17,7 @@ class Version(object):
     name = "py_ez_wikidata"
     version = ez_wikidata.__version__
     date = "2024-03-01"
-    updated = "2024-03-07"
+    updated = "2024-03-20"
     description = "Mapping for Wikidata allows creation of wikidata entries from dicts"
 
     authors = "Tim Holzheim, Wolfgang Fahl"

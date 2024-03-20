@@ -238,7 +238,7 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
     @classmethod
     def get_instance(cls,
         endpoint_url:str="https://qlever.cs.uni-freiburg.de/api/wikidata",
-        lang:str="en"):
+        lang:str="en")->"WikidataPropertyManager":
         """
         initialize the wikidata property manager
         
@@ -246,6 +246,8 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
             endpoint_url(str): the SPARQL endpoint to query if there is no cache available
             lang(str): the languages to query propery labels and descriptions for
         """
+        if hasattr(cls,"wpm"):
+            return cls.wpm
         cache_path = cls.get_cache_path(lang)
         # Check if cache file exists and is not empty
         if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
@@ -253,6 +255,8 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
         else:
             wpm=cls.from_endpoint(endpoint_url, lang)
             wpm.store_to_cache(cache_path)
+        # set instance
+        cls.wpm=wpm
         return wpm
     
     @classmethod

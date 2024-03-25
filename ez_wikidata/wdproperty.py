@@ -3,15 +3,18 @@ Created on 02.03.2024-03-02
 
 @author: wf
 """
+from sqlmodel import Field, SQLModel
 import os
 from dataclasses import dataclass,field
 from enum import Enum, auto
 from lodstorage.sparql import SPARQL
 from lodstorage.yamlable import lod_storable
+from lodstorage.sql_cache import Cached, SqlDB
 from typing import Any, Dict, List,Union, Optional
 import re
 from ez_wikidata.prefixes import Prefixes
 from pathlib import Path
+from lodstorage.query import Query,QueryManager
 
 class WdDatatype(Enum):
     """
@@ -119,12 +122,14 @@ class Variable:
         """
         return re.sub("\W|^(?=\d)", "_", varStr)
 
-@lod_storable
-class WikidataProperty:
+class WikidataProperty(SQLModel, table=True):
     """
     Represents a Wikidata Property.
     """
-    pid: str  # The property ID
+    __table_args__ = {'extend_existing': True}
+    
+    pid: str = Field(primary_key=True)  # The property ID 
+    lang: str = Field(primary_key=True)
     plabel: str # the label of the property
     description: str  # Description of the property
     type_name: str # the type name
@@ -160,25 +165,40 @@ class WikidataProperty:
         return text
 
     
-@lod_storable
 class WikidataPropertyManager:
     """
     handle Wikidata Properties
     """
-    lang:str
-    props: Dict[str, WikidataProperty] = field(default_factory=dict)
+    props_by_lang: Dict[str,Dict[str, WikidataProperty]] = field(default_factory=dict)
   
-    def __post_init__(self):
+    def __init__(self,
+        endpoint_url:str="https://qlever.cs.uni-freiburg.de/api/wikidata",
+        langs:List[str]=["en","de"]):
         """
         initialize the lookups
         """
+        if not "en" in langs:
+            raise ValueError(f"en is mandatory in langs -{langs}")
+        self.qm=QueryManager(lang='sparql')
+        self.sparql=SPARQL(endpoint_url)
+        sql_db_path=WikidataPropertyManager.get_cache_path()
+        self.sql_db=SqlDB(sql_db_path)
+        for lang in langs:
+            query_name=f"wikidata_properties_{lang}"
+            sparql_query=self.get_query_for_lang(lang)
+            query=Query(name=query_name,query=sparql_query)
+            self.qm.queriesByName[query_name]=query
+            cached_props=Cached(WikidataProperty,self.sparql,self.sql_db,query_name)
+            props=cached_props.fetch_or_query(self.qm)
+            if not props:
+                raise Exception(f"Could not fetch wikidata properties for {lang}")
+            
+            self.props_by_lang[lang]=props
+            pass
+        props_en=self.props_by_lang["en"]
         self.props_by_id={}
-        for _plabel,prop in self.props.items():
+        for _plabel,prop in props_en.items():
             self.props_by_id[prop.pid]=prop
-        if self.lang!="en":
-            self.wpm_en=WikidataPropertyManager.get_instance("en")
-        else:
-            self.wpm_en=self
             
     def get_mappings_for_records(
         self, prop_mapping_records: Dict[str, dict]
@@ -196,17 +216,8 @@ class WikidataPropertyManager:
             mapping = PropertyMapping.from_record(self,record)
             mappings.append(mapping)
         return mappings
-            
-      
-    def fetch_props_for_lang(self,endpoint_url:str="https://query.wikidata.org/sparql",lang:str="en"):
-        """
-        Fetches all Wikidata properties available 
-        in the specified language.
-
-        Returns:
-            list: A list of dictionaries, each containing the ID, label, and description of a property.
-        """
-        self.sparql = SPARQL(endpoint_url)
+    
+    def get_query_for_lang(self,lang=str):
         query=Prefixes.getPrefixes(["wikibase","rdfs","schema"])
         query += f"""
 SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
@@ -217,6 +228,17 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
   FILTER(LANG(?propertyLabel) = "{lang}").
   FILTER(LANG(?propertyDescription) = "{lang}").
 }}
+        """
+        return query
+            
+      
+    def fetch_props_for_lang(self,endpoint_url:str="https://query.wikidata.org/sparql",lang:str="en"):
+        """
+        Fetches all Wikidata properties available 
+        in the specified language.
+
+        Returns:
+            list: A list of dictionaries, each containing the ID, label, and description of a property.
         """
         results = self.sparql.queryAsListOfDicts(query)
         # Initialize or clear the dictionary for the specified language
@@ -264,7 +286,7 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
         home = str(Path.home())
         cache_dir = f"{home}/.wikidata"
         os.makedirs(cache_dir,exist_ok=True)
-        cache_path= f"{cache_dir}/wikidata_properties_{lang}.json"
+        cache_path= f"{cache_dir}/wikidata_properties.db"
         return cache_path
     
     @classmethod

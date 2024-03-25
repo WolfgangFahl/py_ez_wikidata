@@ -20,27 +20,26 @@ class TestWikidataProperties(BaseTest):
         super().setUp(debug, profile)
         self.endpoint_url="https://qlever.cs.uni-freiburg.de/api/wikidata"
         self.sparql = SPARQL(self.endpoint_url)
+        
+    def testCacheProperties(self):
+        """
+        test caching the properties
+        """
         # english must be first!
         if self.inPublicCI() or self.inLocalCI():
             self.langs=["en","zh","hi","de","fr","ar","es","bn","ru"]
         else:
             self.langs=["en","de"]
-        self.wpms={}
+        debug=True
+        wpm=WikidataPropertyManager(langs=self.langs)
         for lang in self.langs:
-            self.wpms[lang]=WikidataPropertyManager.get_instance(lang=lang)
-        
-    def test_WikidataPropertiesManager(self):
-        """
-        test the WikidataPropertyManager
-        """
-        debug=self.debug
-        for lang in self.langs:
-            self.assertTrue(lang in self.wpms)
-            wpm=self.wpms[lang]
+            props=wpm.props_by_lang[lang]
             if debug:
-                print(f"There are {len(wpm.props)} properties for lang {lang}")
-            self.assertTrue(len(wpm.props)>200)
-            
+                print(f"There are {len(props)} properties for lang {lang}")
+            self.assertTrue(len(props)>200)
+          
+        pass
+        
     def test_wikidata_datatypes(self):
         """
         test available wikidata datatypes

@@ -168,37 +168,38 @@ class WikidataProperty(SQLModel, table=True):
 class WikidataPropertyManager:
     """
     handle Wikidata Properties
-    """
-    props_by_lang: Dict[str,Dict[str, WikidataProperty]] = field(default_factory=dict)
-  
+    """  
     def __init__(self,
         endpoint_url:str="https://qlever.cs.uni-freiburg.de/api/wikidata",
-        langs:List[str]=["en","de"]):
+        langs:List[str]=["en","de","fr"],
+        debug:bool=False):
         """
         initialize the lookups
         """
         if not "en" in langs:
             raise ValueError(f"en is mandatory in langs -{langs}")
-        self.qm=QueryManager(lang='sparql')
-        self.sparql=SPARQL(endpoint_url)
+        self.debug=debug
+        self.qm=QueryManager(lang='sparql',debug=self.debug)
+        self.sparql=SPARQL(endpoint_url,debug=self.debug)
         sql_db_path=WikidataPropertyManager.get_cache_path()
         self.sql_db=SqlDB(sql_db_path)
+        query_name=f"wikidata_properties"
+        sparql_query=self.get_query_for_langs(langs)
+        query=Query(name=query_name,query=sparql_query)
+        self.qm.queriesByName[query_name]=query
+        cached_props=Cached(WikidataProperty,self.sparql,self.sql_db,query_name,debug=self.debug)
+        prop_records=cached_props.fetch_or_query(self.qm)
+        if not prop_records:
+            raise Exception(f"Could not fetch wikidata properties for {langs}")
+        props=cached_props.to_entities()
+        self.props_by_lang={}
         for lang in langs:
-            query_name=f"wikidata_properties_{lang}"
-            sparql_query=self.get_query_for_lang(lang)
-            query=Query(name=query_name,query=sparql_query)
-            self.qm.queriesByName[query_name]=query
-            cached_props=Cached(WikidataProperty,self.sparql,self.sql_db,query_name)
-            props=cached_props.fetch_or_query(self.qm)
-            if not props:
-                raise Exception(f"Could not fetch wikidata properties for {lang}")
-            
-            self.props_by_lang[lang]=props
-            pass
-        props_en=self.props_by_lang["en"]
+            self.props_by_lang[lang]={}
         self.props_by_id={}
-        for _plabel,prop in props_en.items():
-            self.props_by_id[prop.pid]=prop
+        for prop in props:
+            self.props_by_lang[prop.lang][prop.pid]=prop
+            if prop.lang=="en":
+                self.props_by_id[prop.pid]=prop
             
     def get_mappings_for_records(
         self, prop_mapping_records: Dict[str, dict]
@@ -217,19 +218,38 @@ class WikidataPropertyManager:
             mappings.append(mapping)
         return mappings
     
-    def get_query_for_lang(self,lang=str):
-        query=Prefixes.getPrefixes(["wikibase","rdfs","schema"])
-        query += f"""
-SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
-  ?property a wikibase:Property;
-  rdfs:label ?propertyLabel;
-  schema:description ?propertyDescription.
-  ?property wikibase:propertyType  ?wbType.
-  FILTER(LANG(?propertyLabel) = "{lang}").
-  FILTER(LANG(?propertyDescription) = "{lang}").
-}}
+
+    def get_query_for_langs(self, langs: list=["en","de","fr"]) -> str:
         """
+        Get the SPARQL query for the given list of langs.
+        """
+        query_prefix = Prefixes.getPrefixes(["wikibase", "rdfs", "schema"])
+        query_body = ""
+
+        for lang in langs:
+            if query_body:  # If not the first iteration, add UNION
+                query_body += "UNION\n"
+            query_body += f"""
+            {{
+              ?property a wikibase:Property;
+              rdfs:label ?propertyLabel;
+              schema:description ?propertyDescription;
+              wikibase:propertyType ?wbType.
+              FILTER(LANG(?propertyLabel) = "{lang}") .
+              FILTER(LANG(?propertyDescription) = "{lang}") .
+              BIND("{lang}" AS ?lang)
+            }}
+            """
+
+        query = query_prefix + "SELECT \n" \
+                "  (STR(?property) AS ?pid)\n" \
+                "  ?lang\n" \
+                "  (?propertyLabel AS ?plabel)\n" \
+                "  (?propertyDescription AS ?description)\n" \
+                "  (STR(?wbType) AS ?type_name)\n" \
+                "WHERE {\n" + query_body + "}\n"
         return query
+
             
       
     def fetch_props_for_lang(self,endpoint_url:str="https://query.wikidata.org/sparql",lang:str="en"):
@@ -260,7 +280,7 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
     @classmethod
     def get_instance(cls,
         endpoint_url:str="https://qlever.cs.uni-freiburg.de/api/wikidata",
-        lang:str="en")->"WikidataPropertyManager":
+    )->"WikidataPropertyManager":
         """
         initialize the wikidata property manager
         
@@ -268,18 +288,9 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
             endpoint_url(str): the SPARQL endpoint to query if there is no cache available
             lang(str): the languages to query propery labels and descriptions for
         """
-        if hasattr(cls,"wpm"):
-            return cls.wpm
-        cache_path = cls.get_cache_path(lang)
-        # Check if cache file exists and is not empty
-        if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
-            wpm=cls.from_cache(cache_path)
-        else:
-            wpm=cls.from_endpoint(endpoint_url, lang)
-            wpm.store_to_cache(cache_path)
-        # set instance
-        cls.wpm=wpm
-        return wpm
+        if not hasattr(cls,"wpm"):
+            cls.wpm=WikidataPropertyManager(endpoint_url)
+        return cls.wpm
     
     @classmethod
     def get_cache_path(cls,lang:str="en")->str:
@@ -288,39 +299,6 @@ SELECT ?property ?wbType ?propertyLabel ?propertyDescription WHERE {{
         os.makedirs(cache_dir,exist_ok=True)
         cache_path= f"{cache_dir}/wikidata_properties.db"
         return cache_path
-    
-    @classmethod
-    def from_endpoint(cls,endpoint_url:str,lang:str):
-        wpm=WikidataPropertyManager(lang=lang)
-        wpm.fetch_props_for_lang(endpoint_url=endpoint_url,lang=lang)
-        return wpm
-           
-    def store_to_cache(self, cache_path: str):
-        """
-        Stores the current state of the manager to a cache file.
-
-        Args:
-            cache_path (str): The path to the cache file. If None, the default cache path is used.
-        """
-        if cache_path is None:
-            raise ValueError("cache_path  must be set to store_to_cache")
-        #self.save_to_yaml_file(cache_path)
-        self.save_to_json_file(cache_path)
-
-    @classmethod
-    def from_cache(cls, cache_path: str = None) -> "WikidataPropertyManager":
-        """
-        Loads the manager's state from a cache file.
-
-        Args:
-            cache_path (str, optional): The path to the cache file. If None, the default cache path is used.
-
-        Returns:
-            WikidataPropertyManager: An instance of the manager with the loaded data.
-        """
-        if cache_path is None:
-            cache_path = cls.get_cache_path()
-        return cls.load_from_json_file(cache_path)
     
     def get_properties_by_labels(self, labels: List[str]) -> Dict[str, WikidataProperty]:
         """

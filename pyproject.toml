@@ -20,7 +20,7 @@ dependencies = [
 	# https://github.com/LeMyst/WikibaseIntegrator
 	"wikibaseintegrator>=0.12.5",
 	# https://pypi.org/project/pylodstorage/
-   	"pylodstorage>=0.10.0"
+   	"pylodstorage>=0.10.2"
 ]
 
 requires-python = ">=3.9"

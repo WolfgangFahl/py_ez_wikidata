@@ -31,7 +31,7 @@ class TestWikidataProperties(BaseTest):
         else:
             self.langs=["en","de"]
         debug=True
-        wpm=WikidataPropertyManager(langs=self.langs)
+        wpm=WikidataPropertyManager(langs=self.langs,debug=debug)
         for lang in self.langs:
             props=wpm.props_by_lang[lang]
             if debug:

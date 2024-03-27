@@ -50,7 +50,7 @@ class TrulyTabular(object):
         if endpointConf is None:
             endpointConf = Endpoint.getDefault()
         self.endpointConf = endpointConf
-        self.wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint,lang=lang)
+        self.wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint)
         self.sparql = SPARQL(endpointConf.endpoint, method=self.endpointConf.method)
         self.sparql.debug = self.debug
         self.search_predicate = search_predicate
@@ -64,7 +64,7 @@ class TrulyTabular(object):
             propertyIds
         )
         self.properties.update(
-            self.wpm.get_properties_by_labels(propertyLabels)
+            self.wpm.get_properties_by_labels(propertyLabels,lang=lang)
         )
         self.isodate = datetime.datetime.now().isoformat()
         self.error = None

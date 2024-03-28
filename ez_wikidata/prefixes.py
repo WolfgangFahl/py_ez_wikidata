@@ -1,12 +1,15 @@
-'''
+"""
 Created on 2024-03-02
 
 @author: wf
-'''
+"""
+
+
 class Prefixes:
     """
     handle standard Prefixes
     """
+
     @classmethod
     def getPrefixes(
         cls, prefixes=["rdf", "rdfs", "schema", "wd", "wdt", "wikibase", "xsd"]

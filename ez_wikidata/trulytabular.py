@@ -12,9 +12,11 @@ from typing import Union
 from lodstorage.query import Endpoint, Query, QueryManager, YamlPath
 from lodstorage.sparql import SPARQL
 from lodstorage.version import Version
+
+from ez_wikidata.prefixes import Prefixes
 from ez_wikidata.wdproperty import WikidataProperty, WikidataPropertyManager
 from ez_wikidata.wikidata import WikidataItem
-from ez_wikidata.prefixes import Prefixes
+
 
 class TrulyTabular(object):
     """
@@ -50,7 +52,9 @@ class TrulyTabular(object):
         if endpointConf is None:
             endpointConf = Endpoint.getDefault()
         self.endpointConf = endpointConf
-        self.wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint)
+        self.wpm = WikidataPropertyManager.get_instance(
+            endpoint_url=endpointConf.endpoint
+        )
         self.sparql = SPARQL(endpointConf.endpoint, method=self.endpointConf.method)
         self.sparql.debug = self.debug
         self.search_predicate = search_predicate
@@ -60,11 +64,9 @@ class TrulyTabular(object):
             itemQid, sparql=self.sparql, lang=lang, debug=self.debug
         )
         self.queryManager = TrulyTabular.getQueryManager(debug=self.debug)
-        self.properties = self.wpm.get_properties_by_ids(
-            propertyIds
-        )
+        self.properties = self.wpm.get_properties_by_ids(propertyIds)
         self.properties.update(
-            self.wpm.get_properties_by_labels(propertyLabels,lang=lang)
+            self.wpm.get_properties_by_labels(propertyLabels, lang=lang)
         )
         self.isodate = datetime.datetime.now().isoformat()
         self.error = None

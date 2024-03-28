@@ -6,15 +6,15 @@ Created on 2023-01-14
 from ez_wikidata.wdproperty import PropertyMapping, WdDatatype, WikidataPropertyManager
 from tests.basetest import BaseTest
 
+
 class TestPropertyMapping(BaseTest):
     """
     test the property Mapping
     """
-    
+
     def setUp(self, debug=False, profile=True):
         BaseTest.setUp(self, debug=debug, profile=profile)
-        self.wpm=WikidataPropertyManager.get_instance()
-            
+        self.wpm = WikidataPropertyManager.get_instance()
 
     def test_from_record(self):
         """
@@ -51,7 +51,7 @@ class TestPropertyMapping(BaseTest):
             for i, rec in enumerate([record, legacy_record]):
                 mode = "legacy" if i == 1 else ""
                 with self.subTest(f"test parsing from {mode} record", rec=rec):
-                    mapping = PropertyMapping.from_record(wpm=self.wpm,record=rec)
+                    mapping = PropertyMapping.from_record(wpm=self.wpm, record=rec)
                     for key, expected_value in record.items():
                         actual_value = getattr(mapping, key)
                         self.assertEqual(expected_value, actual_value)

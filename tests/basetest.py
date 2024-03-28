@@ -34,13 +34,13 @@ class BaseTest(TestCase):
         are we running in a public Continuous Integration Environment?
         """
         publicCI = getpass.getuser() in ["travis", "runner"]
-       
-        return publicCI 
-    
+
+        return publicCI
+
     @staticmethod
     def inLocalCI():
         jenkins = "JENKINS_HOME" in os.environ
-        return jenkins 
+        return jenkins
 
 
 class Profiler:

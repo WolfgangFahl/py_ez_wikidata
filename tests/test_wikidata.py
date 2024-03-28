@@ -1,17 +1,9 @@
+import json
 import unittest
 import uuid
 from datetime import datetime
-import json
+
 from lodstorage.lod import LOD
-from ez_wikidata.wikidata import (
-    PropertyMapping,
-    PropertyMappings,
-    UrlReference,
-    WdDatatype,
-    WikidataResult,
-    Wikidata,
-    WikidataItem,
-)
 from wikibaseintegrator.datatypes import (
     URL,
     ExternalID,
@@ -21,6 +13,15 @@ from wikibaseintegrator.datatypes import (
     Time,
 )
 
+from ez_wikidata.wikidata import (
+    PropertyMapping,
+    PropertyMappings,
+    UrlReference,
+    WdDatatype,
+    Wikidata,
+    WikidataItem,
+    WikidataResult,
+)
 from tests.basetest import BaseTest
 
 
@@ -37,7 +38,7 @@ class TestWikidata(BaseTest):
     @property
     def test_wikidata(self) -> Wikidata:
         if self._test_wd is None:
-            wd = Wikidata(baseurl="https://test.wikidata.org",debug=self.debug)
+            wd = Wikidata(baseurl="https://test.wikidata.org", debug=self.debug)
             wd.loginWithCredentials()
             self._test_wd = wd
         return self._test_wd
@@ -230,15 +231,15 @@ class TestWikidata(BaseTest):
             label_for_qids=True,
         )
         self.assertDictEqual(expected, actual)
-        
-    def check_add_result(self,result:WikidataResult):
+
+    def check_add_result(self, result: WikidataResult):
         """
         check the result of an add operation
         """
         if result.debug:
-            if (len(result.errors)>0):
+            if len(result.errors) > 0:
                 print("Errors")
-                for index,error in enumerate(result.errors.values()):
+                for index, error in enumerate(result.errors.values()):
                     print(f"{index+1}:{str(error)}")
             else:
                 print(f"created {result.qid}")
@@ -276,9 +277,9 @@ class TestWikidata(BaseTest):
         tests add_record by creating an item in test.wikidata.org adding property values.
         Also tests adding property values to existing items.
         """
-        debug=self.debug
+        debug = self.debug
         debug = True
-        wd = Wikidata(baseurl="https://test.wikidata.org",debug=debug)
+        wd = Wikidata(baseurl="https://test.wikidata.org", debug=debug)
         wd.loginWithCredentials()
         property_mappings = [
             WikidataSandboxProperties.TEXT,
@@ -309,19 +310,20 @@ class TestWikidata(BaseTest):
 
         # test creating an item
         result = wd.add_record(
-            record=record, 
-            property_mappings=property_mappings, 
-            write=True
+            record=record, property_mappings=property_mappings, write=True
         )
         self.check_add_result(result)
-        
+
         actual = wd.get_record(result.qid, property_mappings=property_mappings)
         self.assertDictEqual(record, actual)
 
         # test modifying an item (not overwriting existing value)
         record["year"] = [record["year"], 2022]
         result = wd.add_record(
-            {"year": 2022}, property_mappings=property_mappings, item_id=result.qid, write=True
+            {"year": 2022},
+            property_mappings=property_mappings,
+            item_id=result.qid,
+            write=True,
         )
         self.check_add_result(result)
         actual = wd.get_record(result.qid, property_mappings=property_mappings)
@@ -331,14 +333,13 @@ class TestWikidata(BaseTest):
         BaseTest.inPublicCI(),
         "Tests creating and modifying items. To run in CI setup credentials",
     )
-    
     def test_addDict(self):
         """
         test addDict
         """
-        debug=self.debug
-        debug=True
-        wd = Wikidata(baseurl="https://test.wikidata.org",debug=debug)
+        debug = self.debug
+        debug = True
+        wd = Wikidata(baseurl="https://test.wikidata.org", debug=debug)
         wd.loginWithCredentials()
         legacy_mappings = [
             {
@@ -406,22 +407,13 @@ class TestWikidata(BaseTest):
                 value="Q1143604",
             ),
             PropertyMapping(
-                "short name", 
-                "short name", 
-                "P95227", 
-                propertyType=WdDatatype.text
+                "short name", "short name", "P95227", propertyType=WdDatatype.text
             ),
             PropertyMapping(
-                "pubDate", 
-                "publication date", 
-                "P95226", 
-                propertyType=WdDatatype.date
+                "pubDate", "publication date", "P95226", propertyType=WdDatatype.date
             ),
             PropertyMapping(
-                "url", 
-                "described at URL", 
-                "P95231", 
-                propertyType=WdDatatype.url
+                "url", "described at URL", "P95231", propertyType=WdDatatype.url
             ),
             PropertyMapping(
                 "language of work or name",
@@ -430,11 +422,7 @@ class TestWikidata(BaseTest):
                 propertyType=WdDatatype.itemid,
                 qualifierOf="url",
             ),
-            PropertyMapping(
-                "urn", 
-                "URN-NBN", 
-                "P95232", 
-                propertyType=WdDatatype.extid),
+            PropertyMapping("urn", "URN-NBN", "P95232", propertyType=WdDatatype.extid),
         ]
         record = {
             "label": str(uuid.uuid4()),
@@ -455,16 +443,15 @@ class TestWikidata(BaseTest):
         BaseTest.inPublicCI(),
         "Tests creating and modifying items. To run in CI setup credentials",
     )
-    
     def test_value_lookup(self):
         """
         tests the lookup of wikidata ids from label value
         Note: Currently the lookup is always against wikidata. Changing this requires to adapt this test accordingly.
         """
         lookup_type, label, expected_qid = (
-            "Q3336843", # constituent country of the United Kingdom - Wikidata
-            "Scotland", # label to lookup
-            "Q22",      # expected lookup result
+            "Q3336843",  # constituent country of the United Kingdom - Wikidata
+            "Scotland",  # label to lookup
+            "Q22",  # expected lookup result
         )  # type qid, label, qid
         mappings = [
             PropertyMapping(
@@ -476,19 +463,13 @@ class TestWikidata(BaseTest):
             )
         ]
         # let't try adding a dict
-        entity_label=f"str(uuid.uuid4())"
-        record = {
-            "label": entity_label, 
-            "country_id": label
-        }
-        expected_record = {
-            "label": entity_label, 
-            "country_id": expected_qid
-        }
+        entity_label = f"str(uuid.uuid4())"
+        record = {"label": entity_label, "country_id": label}
+        expected_record = {"label": entity_label, "country_id": expected_qid}
 
-        debug=self.debug
-        debug=True
-        wd = Wikidata(baseurl="https://test.wikidata.org",debug=debug)
+        debug = self.debug
+        #debug = True
+        wd = Wikidata(baseurl="https://test.wikidata.org", debug=debug)
         wd.loginWithCredentials()
         result = wd.add_record(record, mappings, write=True)
         self.check_add_result(result)
@@ -519,7 +500,7 @@ class TestWikidata(BaseTest):
             "item_id": ["Q377", "Q344"],
             "identifier": [str(uuid.uuid4()), str(uuid.uuid4())],
         }
-        result= self.test_wikidata.add_record(
+        result = self.test_wikidata.add_record(
             record, property_mappings=property_mappings, write=True
         )
         self.check_add_result(result)
@@ -652,23 +633,24 @@ class TestWikidata(BaseTest):
         test converting the PropertyMappings to YAML
         """
         sb_dict = {
-            'text_field': WikidataSandboxProperties.TEXT,
-            'date_field': WikidataSandboxProperties.DATE,
-            'item_field': WikidataSandboxProperties.ITEM,
-            'url_field': WikidataSandboxProperties.URL,
-            'year_field': WikidataSandboxProperties.YEAR,
-            'extid_field': WikidataSandboxProperties.EXT_ID,
+            "text_field": WikidataSandboxProperties.TEXT,
+            "date_field": WikidataSandboxProperties.DATE,
+            "item_field": WikidataSandboxProperties.ITEM,
+            "url_field": WikidataSandboxProperties.URL,
+            "year_field": WikidataSandboxProperties.YEAR,
+            "extid_field": WikidataSandboxProperties.EXT_ID,
         }
-        pm=PropertyMappings(
+        pm = PropertyMappings(
             name="sandbox_props",
             description="TSandbox Properties for Testing",
             url="https://test.wikidata.org",
-            mappings=sb_dict
+            mappings=sb_dict,
         )
-        
-        yaml_str=pm.to_yaml()
+
+        yaml_str = pm.to_yaml()
         if self.debug:
             print(yaml_str)
+
 
 class WikidataSandboxProperties:
     """

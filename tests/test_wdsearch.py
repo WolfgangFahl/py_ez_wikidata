@@ -5,9 +5,8 @@ Created on 24.07.2022
 """
 import json
 
-from tests.basetest import BaseTest
-
 from ez_wikidata.wdsearch import WikidataSearch
+from tests.basetest import BaseTest
 
 
 class TestWikidataSearch(BaseTest):
@@ -27,7 +26,7 @@ class TestWikidataSearch(BaseTest):
         wds = WikidataSearch()
         limit = 2
         debug = self.debug
-        #debug = True
+        # debug = True
         for i, (expected_qid, search_dict) in enumerate(examples.items(), start=1):
             search = search_dict["search"]
             for lang, search_for in search.items():

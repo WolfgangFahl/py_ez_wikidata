@@ -5,15 +5,19 @@ Created on 2022-04-30
 """
 import pprint
 from typing import Dict, List
-from ez_wikidata.wikidata import PropertyMapping, WdDatatype
+
 from ez_wikidata.wdproperty import WikidataPropertyManager
+from ez_wikidata.wikidata import PropertyMapping, WdDatatype
+
 
 class WikibaseQuery(object):
     """
     a Query for Wikibase
     """
 
-    def __init__(self, entity: str,wpm:WikidataPropertyManager=None,debug: bool = False):
+    def __init__(
+        self, entity: str, wpm: WikidataPropertyManager = None, debug: bool = False
+    ):
         """
         Constructor
 
@@ -24,8 +28,8 @@ class WikibaseQuery(object):
         self.debug = debug
         self.entity = entity
         if wpm is None:
-            wpm=WikidataPropertyManager.get_instance()
-        self.wpm=wpm    
+            wpm = WikidataPropertyManager.get_instance()
+        self.wpm = wpm
         self.propertiesByName = {}
         self.propertiesById = {}
         self.propertiesByVarname = {}

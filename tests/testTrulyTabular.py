@@ -10,9 +10,11 @@ from urllib.error import HTTPError
 
 from lodstorage.query import Endpoint, Query, QuerySyntaxHighlight
 from lodstorage.sparql import SPARQL
+
 from ez_wikidata.trulytabular import TrulyTabular
-from ez_wikidata.wikidata import WikidataItem
 from ez_wikidata.wdproperty import WikidataPropertyManager
+from ez_wikidata.wikidata import WikidataItem
+
 
 class TestTrulyTabular(unittest.TestCase):
     """
@@ -27,7 +29,7 @@ class TestTrulyTabular(unittest.TestCase):
         qleverEndpoint.database = "qlever"
         # RWTH Aachen i5 endpoint
         qleverEndpoint.endpoint = "http://qlever-api.wikidata.dbis.rwth-aachen.de"
-        
+
         self.endpointConfs = {qleverEndpoint, Endpoint.getDefault()}
         pass
 
@@ -39,9 +41,7 @@ class TestTrulyTabular(unittest.TestCase):
             ex(Exception): the exception to handle
             endpointConf(Endpoint): the endpoint for which there is a problem
         """
-        self.handleEndpointErrors(
-            ex, endpointConf, "503", "Service Unavailable"
-        )
+        self.handleEndpointErrors(ex, endpointConf, "503", "Service Unavailable")
 
     def handleEndpointErrors(
         self, ex, endpointConf, status_code: str, status_text: str
@@ -134,9 +134,11 @@ class TestTrulyTabular(unittest.TestCase):
         expected = ["Wikimedia database name"]
         for endpointConf in self.endpointConfs:
             try:
-                wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint)
-                prop_dict= wpm.get_properties_by_ids(
-                    propertyIds, 
+                wpm = WikidataPropertyManager.get_instance(
+                    endpoint_url=endpointConf.endpoint
+                )
+                prop_dict = wpm.get_properties_by_ids(
+                    propertyIds,
                 )
                 for i, prop in enumerate(prop_dict.values()):
                     if debug:
@@ -151,7 +153,7 @@ class TestTrulyTabular(unittest.TestCase):
         try getting items by label
         """
         debug = self.debug
-        #debug = True
+        # debug = True
         qLabels = [
             "academic conference",
             "scientific conference series",
@@ -343,7 +345,7 @@ class TestTrulyTabular(unittest.TestCase):
         test the count function of truly tabular
         """
         debug = self.debug
-        #debug = True
+        # debug = True
         qid = "Q55488"  # railway stations
         for endpointConf in self.endpointConfs:
             try:
@@ -364,9 +366,11 @@ class TestTrulyTabular(unittest.TestCase):
         """
         qid = "Q44613"  # monastery
         debug = self.debug
-        #debug = True
+        # debug = True
         for endpointConf in self.endpointConfs:
-            wpm=WikidataPropertyManager.get_instance(endpoint_url=endpointConf.endpoint)
+            wpm = WikidataPropertyManager.get_instance(
+                endpoint_url=endpointConf.endpoint
+            )
             try:
                 tt = TrulyTabular(qid, debug=debug)
                 # P571: inception, P6375: street address
@@ -457,7 +461,7 @@ class TestTrulyTabular(unittest.TestCase):
             },
         ]
         debug = self.debug
-        #debug = True
+        # debug = True
         # loop over different test configurations
         for i, config in enumerate(configs):
             # get the test configuration

@@ -13,13 +13,10 @@ import typing
 from dataclasses import dataclass, field
 from itertools import groupby
 from pathlib import Path
-from typing import  Dict,List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import dateutil.parser
 from lodstorage.sparql import SPARQL
-from ez_wikidata.prefixes import Prefixes
-from ez_wikidata.wdproperty import Variable,PropertyMapping, PropertyMappings, WdDatatype, WikidataPropertyManager
-from ez_wikidata.version import Version
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
     URL,
@@ -35,32 +32,47 @@ from wikibaseintegrator.models import Claim, Reference, Snak
 from wikibaseintegrator.wbi_config import config as wbi_config
 from wikibaseintegrator.wbi_enums import WikibaseDatePrecision, WikibaseRank
 
+from ez_wikidata.prefixes import Prefixes
+from ez_wikidata.version import Version
+from ez_wikidata.wdproperty import (
+    PropertyMapping,
+    PropertyMappings,
+    Variable,
+    WdDatatype,
+    WikidataPropertyManager,
+)
+
+
 @dataclass
 class WikidataResult:
     """
     a class for handling a wikidata result
     """
-    item:Optional[ItemEntity]=None
-    errors:Dict[str,Exception]=field(default_factory=dict)
-    qid: Optional[str] = None  
-    msg:Optional[str]=None
-    debug:Optional[bool]=False
-    
+
+    item: Optional[ItemEntity] = None
+    errors: Dict[str, Exception] = field(default_factory=dict)
+    qid: Optional[str] = None
+    msg: Optional[str] = None
+    debug: Optional[bool] = False
+
     def __post_init__(self):
         # If qid is not provided, derive it from item
         if self.qid is None and self.item:
             self.qid = self.item.id
-    
+
     @property
-    def pretty_item_json(self,indent:int=2) -> str:
+    def pretty_item_json(self, indent: int = 2) -> str:
         """Returns a pretty-printed JSON string of the item."""
         if self.item:
-            item_dict = self.item.get_json()  # Assuming get_json() returns a JSON string representation of the item
-            pretty_json=json.dumps(item_dict, indent=indent)
+            item_dict = (
+                self.item.get_json()
+            )  # Assuming get_json() returns a JSON string representation of the item
+            pretty_json = json.dumps(item_dict, indent=indent)
         else:
-            pretty_json=self.qid
+            pretty_json = self.qid
         return pretty_json
-    
+
+
 class Wikidata:
     """
     wikidata access
@@ -71,14 +83,19 @@ class Wikidata:
     TEST_WD_URL = "https://test.wikidata.org"
     WD_URL = "https://www.wikidata.org"
 
-    def __init__(self, baseurl: str = None,wpm:WikidataPropertyManager=None,debug: bool = False):
+    def __init__(
+        self,
+        baseurl: str = None,
+        wpm: WikidataPropertyManager = None,
+        debug: bool = False,
+    ):
         """
         Constructor
 
         Args:
             baseurl(str): the baseurl of the wikibase to use
             debug(bool): if True output debug information
-            wpm(WikidataPropertymanager): 
+            wpm(WikidataPropertymanager):
         """
         if baseurl is None:
             baseurl = self.WD_URL
@@ -89,8 +106,8 @@ class Wikidata:
         self.user = None
         self._wbi = None
         if wpm is None:
-            wpm=WikidataPropertyManager.get_instance()
-        self.wpm=wpm
+            wpm = WikidataPropertyManager.get_instance()
+        self.wpm = wpm
 
     @property
     def wbi(self) -> WikibaseIntegrator:
@@ -455,7 +472,7 @@ class Wikidata:
         if item_mapping is not None:
             if item_id is None:
                 item_id = record.get(item_mapping.column, None)
-        # get the relevant properties 
+        # get the relevant properties
         properties = []
         for pm in property_mappings:
             if not pm.is_qualifier() and not pm.is_item_itself():
@@ -463,7 +480,7 @@ class Wikidata:
             else:
                 # breakpoint to debug ignored properties
                 pass
-            
+
         for prop in properties:
             qualifier_mappings = qualifier_lookup.get(prop.column, None)
             prop_claims, claim_errors = self._get_statement_for_property(
@@ -480,14 +497,14 @@ class Wikidata:
         if label:
             item.labels.set(language=lang, value=label)
         if description:
-            item.descriptions.set(language=lang, value=description)            
+            item.descriptions.set(language=lang, value=description)
         if write:
             if len(errors) == 0 or ignore_errors:
                 try:
                     item = item.write(summary=summary)
                 except Exception as ex:
                     errors["write failed"] = ex
-        result=WikidataResult(item=item,errors=errors,debug=self.debug)
+        result = WikidataResult(item=item, errors=errors, debug=self.debug)
         return result
 
     def _get_statement_for_property(
@@ -644,7 +661,9 @@ class Wikidata:
         elif pm.property_type_enum is WdDatatype.itemid:
             statement = Item(value=value, prop_nr=pm.propertyId)
         else:
-            raise Exception(f"({pm.property_type_enum}) unknown or not supported datatype")
+            raise Exception(
+                f"({pm.property_type_enum}) unknown or not supported datatype"
+            )
         return statement
 
     @staticmethod
@@ -765,7 +784,9 @@ class Wikidata:
         Normalize given record by converting Qids to WikidataItem objects (lookup label) and find out Qid if label given
         based on the given prop_map
         """
-        itemid_props = [p for p in prop_map if p.property_type_enum is WdDatatype.itemid]
+        itemid_props = [
+            p for p in prop_map if p.property_type_enum is WdDatatype.itemid
+        ]
         for p in itemid_props:
             if p.column is None or p.column == "":
                 continue
@@ -806,7 +827,6 @@ class Wikidata:
         return item
 
 
-
 @dataclass
 class WikidataItem:
     qid: str
@@ -817,12 +837,12 @@ class WikidataItem:
     label: str = field(init=False, default=None)
     description: str = field(init=False, default=None)
     url: str = field(init=False)
-     
+
     def __eq__(self, other) -> bool:
         """
         WikidataItems are equal if the qid is equal
         """
-        same=isinstance(other, WikidataItem) and self.qid == getattr(
+        same = isinstance(other, WikidataItem) and self.qid == getattr(
             other, "qid", None
         )
         return same
@@ -834,7 +854,7 @@ class WikidataItem:
         if not self.qid:
             self.qid = None
             return
-        self.url=f"https://www.wikidata.org/wiki/{self.qid}"
+        self.url = f"https://www.wikidata.org/wiki/{self.qid}"
         # numeric qid
         self.qnumber = int(self.qid[1:])
         self.url = f"https://www.wikidata.org/wiki/{self.qid}"
@@ -964,6 +984,7 @@ WHERE {{
         sortedItems = sorted(items, key=lambda item: item.qnumber)
         return sortedItems
 
+
 class UrlReference(Reference):
     """
     Reference consisting of
@@ -987,4 +1008,3 @@ class UrlReference(Reference):
         self.date = date
         self.add(URL(value=self.url, prop_nr="P854"))
         self.add(Wikidata.get_date_claim(date, prop_nr="P813"))
-

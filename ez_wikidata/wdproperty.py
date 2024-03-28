@@ -4,6 +4,7 @@ Created on 02.03.2024-03-02
 @author: wf
 """
 from sqlmodel import Field, SQLModel
+from sqlalchemy import event
 import os
 from dataclasses import dataclass,field
 from enum import Enum, auto
@@ -122,6 +123,7 @@ class Variable:
         """
         return re.sub("\W|^(?=\d)", "_", varStr)
 
+
 class WikidataProperty(SQLModel, table=True):
     """
     Represents a Wikidata Property.
@@ -139,11 +141,15 @@ class WikidataProperty(SQLModel, table=True):
     #valueVarname: str = field(init=False)
     #labelVarname: str = field(init=False)
     #ptype: WdDatatype = field(init=False) 
-    
-    def __post_init__(self):
+
+    @staticmethod
+    def after_load(self, _context):
         """
-        create calculated fields
+        Function to run after an instance of WikidataProperty 
+        is loaded from the database to
+        create and modify calculated fields
         """
+        self.pid=self.pid.replace("http://www.wikidata.org/entity/","")
         self.url=f"https://www.wikidata.org/wiki/Property:{self.pid}"
         self.ptype=WdDatatype.from_wb_type_name(self.type_name)
         self.varname = Variable.validVarName(self.plabel)
@@ -188,6 +194,7 @@ class WikidataPropertyManager:
         query=Query(name=query_name,query=sparql_query)
         self.qm.queriesByName[query_name]=query
         cached_props=Cached(WikidataProperty,self.sparql,self.sql_db,query_name,debug=self.debug)
+        event.listens_for(WikidataProperty, "load", WikidataProperty.after_load)
         prop_records=cached_props.fetch_or_query(self.qm)
         if not prop_records:
             raise Exception(f"Could not fetch wikidata properties for {langs}")
@@ -197,7 +204,7 @@ class WikidataPropertyManager:
             self.props_by_lang[lang]={}
         self.props_by_id={}
         for prop in props:
-            self.props_by_lang[prop.lang][prop.pid]=prop
+            self.props_by_lang[prop.lang][prop.plabel]=prop
             if prop.lang=="en":
                 self.props_by_id[prop.pid]=prop
             

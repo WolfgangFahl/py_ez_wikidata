@@ -20,25 +20,24 @@ class TestWikidataProperties(BaseTest):
         super().setUp(debug, profile)
         self.endpoint_url="https://qlever.cs.uni-freiburg.de/api/wikidata"
         self.sparql = SPARQL(self.endpoint_url)
+        # english must be first!
+        if self.inPublicCI() or self.inLocalCI():
+            self.langs=["en","zh","hi","de","fr","ar","es","bn","ru"]
+        else:
+            self.langs=["en","de","fr","es"]
+        debug=True
+        self.wpm=WikidataPropertyManager(langs=self.langs,debug=debug)
+  
         
     def testCacheProperties(self):
         """
         test caching the properties
         """
-        # english must be first!
-        if self.inPublicCI() or self.inLocalCI():
-            self.langs=["en","zh","hi","de","fr","ar","es","bn","ru"]
-        else:
-            self.langs=["en","de"]
-        debug=True
-        wpm=WikidataPropertyManager(langs=self.langs,debug=debug)
         for lang in self.langs:
-            props=wpm.props_by_lang[lang]
-            if debug:
+            props=self.wpm.props_by_lang[lang]
+            if self.debug:
                 print(f"There are {len(props)} properties for lang {lang}")
             self.assertTrue(len(props)>200)
-          
-        pass
         
     def test_wikidata_datatypes(self):
         """
@@ -69,11 +68,10 @@ class TestWikidataProperties(BaseTest):
         test_cases = [
             (['Einwohnerzahl'], 'de','P1082'),  # German for 'population'
             (['population'], 'en','P1082'),  # English
-            #(['population'], 'fr', 'P1082')   # French 
+            (['population'], 'fr', 'P1082')   # French 
         ]
         for labels, lang, expected_pid in test_cases:
-            wpm=self.wpms[lang]
-            properties = wpm.get_properties_by_labels(labels)
+            properties = self.wpm.get_properties_by_labels(labels,lang=lang)
             msg=f"Failed for labels {labels} in language {lang}"
             self.assertEqual(1, len(properties), msg)
             plabel=labels[0]

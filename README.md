@@ -12,4 +12,3 @@ Mapping for Wikidata allows creation of wikidata entries from dicts
 ## Docs 
 [Wiki](https://wiki.bitplan.com/index.php/Py_ez_wikidata)
 
-

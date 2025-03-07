@@ -1,5 +1,5 @@
 """
-Created on 24.07.2022
+Created on 2022-07-24
 
 @author: wf
 """
@@ -20,7 +20,7 @@ class TestWikidataSearch(BaseTest):
         """
         examples = {
             "Q2020153": {"search": {"en": "academic con", "fr": "congrès sci"}},
-            "Q3918": {"search": {"en": "uni"}},
+            "Q145": {"search": {"en": "united king"}},
             "Q169889": {"search": {"en": "abc"}},
         }
         wds = WikidataSearch()

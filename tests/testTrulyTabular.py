@@ -153,10 +153,10 @@ class TestTrulyTabular(unittest.TestCase):
         try getting items by label
         """
         debug = self.debug
-        # debug = True
+        #debug = True
         qLabels = [
             "academic conference",
-            "scientific conference series",
+            "academic conference series",
             "whisky distillery",
             "human",
         ]

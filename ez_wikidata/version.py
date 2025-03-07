@@ -17,7 +17,7 @@ class Version(object):
     name = "py_ez_wikidata"
     version = ez_wikidata.__version__
     date = "2024-03-01"
-    updated = "2024-08-09"
+    updated = "2025-03-07"
     description = "Mapping for Wikidata allows creation of wikidata entries from dicts"
 
     authors = "Tim Holzheim, Wolfgang Fahl"
@@ -26,7 +26,7 @@ class Version(object):
     chat_url = "https://github.com/WolfgangFahl/py_ez_wikidata/discussions"
     cm_url = "https://github.com/WolfgangFahl/py_ez_wikidata"
 
-    license = f"""Copyright 2024 contributors. All rights reserved.
+    license = f"""Copyright 2024-2025 contributors. All rights reserved.
 
   Licensed under the Apache License 2.0
   http://www.apache.org/licenses/LICENSE-2.0

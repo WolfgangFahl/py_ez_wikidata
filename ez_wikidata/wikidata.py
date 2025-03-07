@@ -30,7 +30,7 @@ from wikibaseintegrator.datatypes import (
 from wikibaseintegrator.entities import ItemEntity
 from wikibaseintegrator.models import Claim, Reference, Snak
 from wikibaseintegrator.wbi_config import config as wbi_config
-from wikibaseintegrator.wbi_enums import WikibaseDatePrecision, WikibaseRank
+from wikibaseintegrator.wbi_enums import  WikibaseRank, WikibaseTimePrecision
 
 from ez_wikidata.prefixes import Prefixes
 from ez_wikidata.version import Version
@@ -204,7 +204,7 @@ class Wikidata:
         sparqlQuery = """PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             PREFIX wdt: <http://www.wikidata.org/prop/direct/>
             PREFIX wd: <http://www.wikidata.org/entity/>
-            
+
             SELECT ?item ?itemLabel
             WHERE {
               {
@@ -291,7 +291,7 @@ class Wikidata:
         item = self.wbi.item.get(item_id)
         lang = "en"
         if isinstance(property_mappings, dict):
-            property_mappings = PropertyMapping.from_records(property_mappings)
+            property_mappings = PropertyMapping.from_dict(property_mappings)
         record = dict()
         if include_label and item.labels.get(lang) is not None:
             record["label"] = item.labels.get(lang).value
@@ -646,7 +646,7 @@ class Wikidata:
         if pm.property_type_enum is WdDatatype.year:
             yearString = f"+{value}-01-01T00:00:00Z"
             statement = Time(
-                yearString, prop_nr=pm.propertyId, precision=WikibaseDatePrecision.YEAR
+                yearString, prop_nr=pm.propertyId, precision=WikibaseTimePrecision.YEAR
             )
         elif pm.property_type_enum is WdDatatype.date:
             statement = self.get_date_claim(value, pm.propertyId)
@@ -690,7 +690,7 @@ class Wikidata:
         iso_date = date_value.isoformat()
         date_string = f"+{iso_date}Z"
         statement = Time(
-            date_string, prop_nr=prop_nr, precision=WikibaseDatePrecision.DAY
+            date_string, prop_nr=prop_nr, precision=WikibaseTimePrecision.DAY
         )
         return statement
 
@@ -744,7 +744,7 @@ class Wikidata:
             PREFIX wdt: <http://www.wikidata.org/prop/direct/>
             PREFIX wd: <http://www.wikidata.org/entity/>
             PREFIX wikibase: <http://wikiba.se/ontology#>
-            
+
             SELECT Distinct ?o
             WHERE {
               wd:%s wikibase:propertyType ?o.
@@ -908,7 +908,7 @@ class WikidataItem:
             (str,str): the label and description as a tuple
         """
         query = f"""# get the label for the given item
-{Prefixes.getPrefixes(["rdfs","wd","schema"])}        
+{Prefixes.getPrefixes(["rdfs","wd","schema"])}
 SELECT ?itemLabel ?itemDescription
 WHERE
 {{
@@ -955,20 +955,20 @@ WHERE
 # e.g. we'll find human=Q5 as the oldest type for the label "human" first
 # and then the newer ones such as "race in Warcraft"
 {Prefixes.getPrefixes(["rdfs","schema","xsd"])}
-SELECT 
-  #?itemId 
-  ?item 
-  ?itemLabel 
+SELECT
+  #?itemId
+  ?item
+  ?itemLabel
   ?itemDescription
-WHERE {{ 
+WHERE {{
   VALUES ?itemLabel {{
     {valuesClause}
   }}
   #BIND (xsd:integer(SUBSTR(STR(?item),33)) AS ?itemId)
-  ?item rdfs:label ?itemLabel. 
+  ?item rdfs:label ?itemLabel.
   ?item schema:description ?itemDescription.
   FILTER(LANG(?itemDescription)="{lang}")
-}} 
+}}
 #ORDER BY ?itemId"""
         qLod = sparql.queryAsListOfDicts(query)
         items = []

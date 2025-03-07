@@ -18,20 +18,20 @@ readme = "README.md"
 license = {text = "Apache-2.0"}
 dependencies = [
 	# https://github.com/LeMyst/WikibaseIntegrator
-	"wikibaseintegrator>=0.12.5",
+	"wikibaseintegrator>=0.12.12",
 	# https://pypi.org/project/pylodstorage/
-   	"pylodstorage>=0.12.2"
+   	"pylodstorage>=0.14.3"
 ]
 
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers=[
     "Development Status :: 4 - Beta",
     "Environment :: Web Environment",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: User Interfaces",
     "Intended Audience :: Developers",

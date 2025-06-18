@@ -3,6 +3,7 @@ Created on 2024-03-01
 
 @author: wf
 """
+
 from dataclasses import dataclass
 
 import ez_wikidata
@@ -17,7 +18,7 @@ class Version(object):
     name = "py_ez_wikidata"
     version = ez_wikidata.__version__
     date = "2024-03-01"
-    updated = "2025-03-07"
+    updated = "2025-06-18"
     description = "Mapping for Wikidata allows creation of wikidata entries from dicts"
 
     authors = "Tim Holzheim, Wolfgang Fahl"

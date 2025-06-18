@@ -3,6 +3,7 @@ Created on 2023-01-14
 
 @author: wf
 """
+
 from ez_wikidata.wdproperty import PropertyMapping, WdDatatype, WikidataPropertyManager
 from tests.basetest import BaseTest
 

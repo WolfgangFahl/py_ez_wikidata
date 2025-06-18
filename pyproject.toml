@@ -17,10 +17,14 @@ maintainers = [
 readme = "README.md"
 license = {text = "Apache-2.0"}
 dependencies = [
+	# https://pypi.org/project/pybasemkit/
+	# https://github.com/WolfgangFahl/pybasemkit
+	# Python base module kit: YAML/JSON I/O, structured logging, CLI tooling, shell execution, and remote pydevd debug support.
+	"pybasemkit>=0.0.3",
 	# https://github.com/LeMyst/WikibaseIntegrator
 	"wikibaseintegrator>=0.12.12",
 	# https://pypi.org/project/pylodstorage/
-   	"pylodstorage>=0.14.3"
+	"pylodstorage>=0.16.4"
 ]
 
 requires-python = ">=3.10"

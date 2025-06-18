@@ -3,6 +3,7 @@ Created on 02.03.2024-03-02
 
 @author: wf
 """
+
 import os
 import re
 from dataclasses import dataclass, field
@@ -10,10 +11,10 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from basemkit.yamlable import lod_storable
 from lodstorage.profiler import Profiler
 from lodstorage.sparql import SPARQL
 from lodstorage.sql import SQLDB
-from lodstorage.yamlable import lod_storable
 
 from ez_wikidata.prefixes import Prefixes
 
@@ -131,7 +132,8 @@ class WikidataProperty:
     """
     Represents a Wikidata Property.
     """
-    id: str # the id of the property - pid + lang
+
+    id: str  # the id of the property - pid + lang
     pid: str  # The property ID
     lang: str
     plabel: str  # the label of the property
@@ -201,7 +203,7 @@ class WikidataPropertyManager:
         self.props = []
         self.props_by_id = {}
         self.props_by_lang = {}
-        self.loaded=False
+        self.loaded = False
         if with_load:
             self.load()
 
@@ -209,7 +211,10 @@ class WikidataPropertyManager:
         """
         get my list of dicts from sparql
         """
-        profiler = Profiler(f"getting wikidata properties for {len(self.langs)} languages via SPARQL", profile=self.profile)
+        profiler = Profiler(
+            f"getting wikidata properties for {len(self.langs)} languages via SPARQL",
+            profile=self.profile,
+        )
         self.lod = self.sparql.queryAsListOfDicts(self.sparql_query)
         profiler.time()
 
@@ -256,15 +261,15 @@ class WikidataPropertyManager:
         else:
             self.load_from_sparql()
             for record in self.lod:
-                pid=record["pid"]
-                lang=record["lang"]
+                pid = record["pid"]
+                lang = record["lang"]
                 pid = pid.replace("http://www.wikidata.org/entity/", "")
-                record["pid"]=pid
-                record["id"]=f"{pid}-{lang}"
+                record["pid"] = pid
+                record["id"] = f"{pid}-{lang}"
             self.store()
         self.init_props()
-        self.loaded=True
-            
+        self.loaded = True
+
     def init_props(self):
         """
         initialize my property structures
@@ -279,7 +284,7 @@ class WikidataPropertyManager:
             self.props.append(prop)
         for lang in self.langs:
             self.props_by_lang[lang] = {}
-            self.props_by_id[lang]={}
+            self.props_by_id[lang] = {}
         for prop in self.props:
             self.props_by_lang[prop.lang][prop.plabel] = prop
             self.props_by_id[prop.lang][prop.pid] = prop
@@ -378,7 +383,7 @@ class WikidataPropertyManager:
         return matched_properties
 
     def get_properties_by_ids(
-        self, ids: List[str],lang:str="en"
+        self, ids: List[str], lang: str = "en"
     ) -> Dict[str, Optional[WikidataProperty]]:
         """
         Get properties by their IDs for a specific language.
@@ -444,7 +449,9 @@ class PropertyMapping:
     propertyId: str
     propertyType: str
     qualifierOf: str = None
-    valueLookupType: Any = None  # type (instance of/P31) of the property value → used to lookup the qid if property value if value is not already a qid
+    valueLookupType: Any = (
+        None  # type (instance of/P31) of the property value → used to lookup the qid if property value if value is not already a qid
+    )
     value: Any = None  # set this value for the property
     varname: str = None
     # property_type_enum: WdDatatype=field(init=False)

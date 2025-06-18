@@ -3,6 +3,7 @@ Created on 2022-07-24
 
 @author: wf
 """
+
 import json
 
 from ez_wikidata.wdsearch import WikidataSearch

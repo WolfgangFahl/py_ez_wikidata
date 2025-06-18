@@ -468,7 +468,7 @@ class TestWikidata(BaseTest):
         expected_record = {"label": entity_label, "country_id": expected_qid}
 
         debug = self.debug
-        #debug = True
+        # debug = True
         wd = Wikidata(baseurl="https://test.wikidata.org", debug=debug)
         wd.loginWithCredentials()
         result = wd.add_record(record, mappings, write=True)

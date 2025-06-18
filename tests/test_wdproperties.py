@@ -3,6 +3,7 @@ Created on 2024-03-03
 
 @author: wf
 """
+
 from lodstorage.sparql import SPARQL
 
 from ez_wikidata.prefixes import Prefixes
@@ -107,7 +108,7 @@ class TestWikidataProperties(BaseTest):
         self.wpm.load()
 
         for ids, lang, expected_labels in test_cases:
-            properties = self.wpm.get_properties_by_ids(ids,lang=lang)
+            properties = self.wpm.get_properties_by_ids(ids, lang=lang)
             self.assertEqual(
                 len(properties),
                 len(expected_labels),

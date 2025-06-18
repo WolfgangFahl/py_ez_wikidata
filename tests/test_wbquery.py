@@ -3,6 +3,7 @@ Created on 2024-03-01
 
 @author: wf
 """
+
 from ez_wikidata.wbquery import WikibaseQuery
 from tests.basetest import BaseTest
 

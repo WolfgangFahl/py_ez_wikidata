@@ -3,6 +3,7 @@ Created on 2022-04-18
 
 @author: wf
 """
+
 import datetime
 import json
 import os
@@ -30,7 +31,7 @@ from wikibaseintegrator.datatypes import (
 from wikibaseintegrator.entities import ItemEntity
 from wikibaseintegrator.models import Claim, Reference, Snak
 from wikibaseintegrator.wbi_config import config as wbi_config
-from wikibaseintegrator.wbi_enums import  WikibaseRank, WikibaseTimePrecision
+from wikibaseintegrator.wbi_enums import WikibaseRank, WikibaseTimePrecision
 
 from ez_wikidata.prefixes import Prefixes
 from ez_wikidata.version import Version
@@ -115,9 +116,9 @@ class Wikidata:
         WikibaseIntegrator
         """
         if self._wbi is None or (self.login is not None and self._wbi.login is None):
-            wbi_config[
-                "USER_AGENT"
-            ] = f"{Version.name}/{Version.version} (https://www.wikidata.org/wiki/User:{self.user})"
+            wbi_config["USER_AGENT"] = (
+                f"{Version.name}/{Version.version} (https://www.wikidata.org/wiki/User:{self.user})"
+            )
             wbi_config["MEDIAWIKI_API_URL"] = self.apiurl
             self._wbi = WikibaseIntegrator(login=self.login)
         return self._wbi

@@ -3,6 +3,7 @@ Created on 2022-03-4
 
 @author: wf
 """
+
 import json
 import unittest
 from pprint import pprint
@@ -153,7 +154,7 @@ class TestTrulyTabular(unittest.TestCase):
         try getting items by label
         """
         debug = self.debug
-        #debug = True
+        # debug = True
         qLabels = [
             "academic conference",
             "academic conference series",

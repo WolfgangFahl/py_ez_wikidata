@@ -21,7 +21,7 @@ class TestWikidataProperties(BaseTest):
         setUp the tests cases
         """
         super().setUp(debug, profile)
-        self.endpoint_url = "https://qlever.cs.uni-freiburg.de/api/wikidata"
+        self.endpoint_url = "https://qlever.dev/api/wikidata"
         self.sparql = SPARQL(self.endpoint_url)
         self.wpm = WikidataPropertyManager(debug=debug, with_load=False)
 

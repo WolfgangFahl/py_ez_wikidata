@@ -29,9 +29,9 @@ class TestTrulyTabular(unittest.TestCase):
         qleverEndpoint.method = "POST"
         qleverEndpoint.database = "qlever"
         # RWTH Aachen i5 endpoint
-        qleverEndpoint.endpoint = "http://qlever-api.wikidata.dbis.rwth-aachen.de"
+        qleverEndpoint.endpoint = "https://qlever-api.wikidata.dbis.rwth-aachen.de/sparql"
 
-        self.endpointConfs = {qleverEndpoint, Endpoint.getDefault()}
+        self.endpointConfs = [qleverEndpoint, Endpoint.getDefault()]
         pass
 
     def handleServiceUnavailable(self, ex, endpointConf):

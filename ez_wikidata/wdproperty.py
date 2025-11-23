@@ -1,5 +1,5 @@
 """
-Created on 02.03.2024-03-02
+Created on 2024-03-02
 
 @author: wf
 """
@@ -15,8 +15,7 @@ from basemkit.yamlable import lod_storable
 from lodstorage.profiler import Profiler
 from lodstorage.sparql import SPARQL
 from lodstorage.sql import SQLDB
-
-from ez_wikidata.prefixes import Prefixes
+from lodstorage.prefixes import Prefixes
 
 
 class WdDatatype(Enum):
@@ -182,7 +181,7 @@ class WikidataPropertyManager:
 
     def __init__(
         self,
-        endpoint_url: str = "https://qlever.cs.uni-freiburg.de/api/wikidata",
+        endpoint_url: str = "https://qlever.dev/api/wikidata",
         langs: List[str] = ["en", "zh", "hi", "de", "fr", "ar", "es", "bn", "ru"],
         with_load: bool = True,
         profile: bool = True,
@@ -341,7 +340,7 @@ class WikidataPropertyManager:
     @classmethod
     def get_instance(
         cls,
-        endpoint_url: str = "https://qlever.cs.uni-freiburg.de/api/wikidata",
+        endpoint_url: str = "https://qlever.dev/api/wikidata",
     ) -> "WikidataPropertyManager":
         """
         initialize the wikidata property manager

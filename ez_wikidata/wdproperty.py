@@ -138,6 +138,7 @@ class WikidataProperty:
     plabel: str  # the label of the property
     description: str  # Description of the property
     type_name: str  # the type name
+    formatterURI: Optional[str] = None # P1921 formatter URI for RDF resource
     reverse: bool = False  # Indicates if the property is used in reverse direction
     # Variables initialized in __post_init__
     # varname: str = field(init=False)
@@ -322,6 +323,7 @@ class WikidataPropertyManager:
     rdfs:label ?propertyLabel;
     schema:description ?propertyDescription;
     wikibase:propertyType ?wbType.
+    OPTIONAL {{ ?property wdt:P1921 ?formatterURI. }}
     FILTER(LANG(?propertyLabel) = "{lang}") .
     FILTER(LANG(?propertyDescription) = "{lang}") .
     BIND("{lang}" AS ?lang)

@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import dateutil.parser
+from lodstorage.prefixes import Prefixes
 from lodstorage.sparql import SPARQL
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
@@ -33,7 +34,6 @@ from wikibaseintegrator.models import Claim, Reference, Snak
 from wikibaseintegrator.wbi_config import config as wbi_config
 from wikibaseintegrator.wbi_enums import WikibaseRank, WikibaseTimePrecision
 
-from lodstorage.prefixes import Prefixes
 from ez_wikidata.version import Version
 from ez_wikidata.wdproperty import (
     PropertyMapping,
@@ -291,7 +291,9 @@ class Wikidata:
         item = self.wbi.item.get(item_id)
         lang = "en"
         if isinstance(property_mappings, dict):
-            property_mappings = PropertyMapping.from_dict(property_mappings) # @UndefinedVariable
+            property_mappings = PropertyMapping.from_dict(
+                property_mappings
+            )  # @UndefinedVariable
         record = dict()
         if include_label and item.labels.get(lang) is not None:
             record["label"] = item.labels.get(lang).value

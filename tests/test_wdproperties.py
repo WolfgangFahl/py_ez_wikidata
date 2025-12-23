@@ -4,9 +4,9 @@ Created on 2024-03-03
 @author: wf
 """
 
+from lodstorage.prefixes import Prefixes
 from lodstorage.sparql import SPARQL
 
-from ez_wikidata.prefixes import Prefixes
 from ez_wikidata.wdproperty import PropertyMapping, WdDatatype, WikidataPropertyManager
 from tests.basetest import BaseTest
 

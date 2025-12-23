@@ -12,10 +12,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from basemkit.yamlable import lod_storable
+from lodstorage.prefixes import Prefixes
 from lodstorage.profiler import Profiler
 from lodstorage.sparql import SPARQL
 from lodstorage.sql import SQLDB
-from lodstorage.prefixes import Prefixes
 
 
 class WdDatatype(Enum):

@@ -335,6 +335,7 @@ class WikidataPropertyManager:
             "  (?propertyLabel AS ?plabel)\n"
             "  (?propertyDescription AS ?description)\n"
             "  (STR(?wbType) AS ?type_name)\n"
+            "  ?formatterURI\n"
             "WHERE {" + query_body + "\n}\n"
         )
         return query

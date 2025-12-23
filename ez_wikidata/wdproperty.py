@@ -618,12 +618,10 @@ class PropertyMapping:
 
 
 @lod_storable
-@dataclass
 class PropertyMappings:
     """
     A collection of Wikidata property mappings, with metadata.
     """
-
     name: str
     mappings: Dict[str, PropertyMapping] = field(default_factory=dict)
     description: Optional[str] = None

@@ -37,6 +37,7 @@ from wikibaseintegrator.wbi_enums import WikibaseRank, WikibaseTimePrecision
 from ez_wikidata.version import Version
 from ez_wikidata.wdproperty import (
     PropertyMapping,
+    PropertyMappings,
     Variable,
     WdDatatype,
     WikidataPropertyManager,
@@ -291,9 +292,7 @@ class Wikidata:
         item = self.wbi.item.get(item_id)
         lang = "en"
         if isinstance(property_mappings, dict):
-            property_mappings = PropertyMapping.from_dict(
-                property_mappings
-            )  # @UndefinedVariable
+            property_mappings = PropertyMappings.from_dict(property_mappings)  # @UndefinedVariable
         record = dict()
         if include_label and item.labels.get(lang) is not None:
             record["label"] = item.labels.get(lang).value

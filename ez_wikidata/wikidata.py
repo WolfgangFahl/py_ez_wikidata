@@ -33,11 +33,10 @@ from wikibaseintegrator.models import Claim, Reference, Snak
 from wikibaseintegrator.wbi_config import config as wbi_config
 from wikibaseintegrator.wbi_enums import WikibaseRank, WikibaseTimePrecision
 
-from ez_wikidata.prefixes import Prefixes
+from lodstorage.prefixes import Prefixes
 from ez_wikidata.version import Version
 from ez_wikidata.wdproperty import (
     PropertyMapping,
-    PropertyMappings,
     Variable,
     WdDatatype,
     WikidataPropertyManager,
@@ -292,7 +291,7 @@ class Wikidata:
         item = self.wbi.item.get(item_id)
         lang = "en"
         if isinstance(property_mappings, dict):
-            property_mappings = PropertyMapping.from_dict(property_mappings)
+            property_mappings = PropertyMapping.from_dict(property_mappings) # @UndefinedVariable
         record = dict()
         if include_label and item.labels.get(lang) is not None:
             record["label"] = item.labels.get(lang).value

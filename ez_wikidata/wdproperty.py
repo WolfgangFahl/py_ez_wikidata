@@ -6,7 +6,8 @@ Created on 2024-03-02
 
 import os
 import re
-from dataclasses import dataclass, field
+import logging
+from dataclasses import field
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -123,8 +124,8 @@ class Variable:
         Returns:
             str: a valid variable name
         """
-        return re.sub("\W|^(?=\d)", "_", varStr)
-
+        var_name= re.sub(r"\W|^(?=\d)", "_", varStr)
+        return var_name
 
 @lod_storable
 class WikidataProperty:
@@ -250,6 +251,29 @@ class WikidataPropertyManager:
         self.lod = self.sql_db.query(sql_query)
         profiler.time()
 
+    def prepare_store(self):
+        """
+        prepare storing by adding id and pid and avoiding duplicates
+        """
+        final_lod=[]
+        seen_ids=set()
+        for record in self.lod:
+            pid = record["pid"]
+            lang = record["lang"]
+            pid = pid.replace("http://www.wikidata.org/entity/", "")
+            record["pid"] = pid
+            record_id= f"{pid}-{lang}"
+            record["id"] = record_id
+            if record_id not in seen_ids:
+                seen_ids.add(record_id)
+                final_lod.append(record)
+            else:
+                formatterURI=record.get("formatterURI")
+                msg=f"ignoring duplicate formatterURI {formatterURI} for {record_id}"
+                logging.warning(msg)
+
+        self.lod=final_lod
+
     def load(self):
         """
         load the properties
@@ -260,12 +284,7 @@ class WikidataPropertyManager:
             self.load_from_sql()
         else:
             self.load_from_sparql()
-            for record in self.lod:
-                pid = record["pid"]
-                lang = record["lang"]
-                pid = pid.replace("http://www.wikidata.org/entity/", "")
-                record["pid"] = pid
-                record["id"] = f"{pid}-{lang}"
+            self.prepare_store()
             self.store()
         self.init_props()
         self.loaded = True
@@ -310,7 +329,7 @@ class WikidataPropertyManager:
         """
         Get the SPARQL query for the given list of langs.
         """
-        query_prefix = Prefixes.getPrefixes(["wikibase", "rdfs", "schema"])
+        query_prefix = Prefixes.getPrefixes(["wikibase", "rdfs", "schema","wdt"])
         query_body = ""
         if langs is None:
             langs = self.langs

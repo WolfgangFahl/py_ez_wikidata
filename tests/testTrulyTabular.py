@@ -29,7 +29,9 @@ class TestTrulyTabular(unittest.TestCase):
         qleverEndpoint.method = "POST"
         qleverEndpoint.database = "qlever"
         # RWTH Aachen i5 endpoint
-        qleverEndpoint.endpoint = "https://qlever-api.wikidata.dbis.rwth-aachen.de/sparql"
+        qleverEndpoint.endpoint = (
+            "https://qlever-api.wikidata.dbis.rwth-aachen.de/sparql"
+        )
 
         self.endpointConfs = [qleverEndpoint, Endpoint.getDefault()]
         pass

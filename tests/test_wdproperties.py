@@ -30,17 +30,25 @@ class TestWikidataProperties(BaseTest):
         test query
         """
         sparql_query = self.wpm.get_query_for_langs()
-        if self.debug:
+        debug=self.debug
+        #debug=True
+        if debug:
             print(sparql_query)
-        expected = """{ # wikidata properties with en labels and descriptions
-    ?property a wikibase:Property;
-    rdfs:label ?propertyLabel;
-    schema:description ?propertyDescription;
-    wikibase:propertyType ?wbType.
-    FILTER(LANG(?propertyLabel) = "en") .
-    FILTER(LANG(?propertyDescription) = "en") .
-    BIND("en" AS ?lang)
-  }"""
+        expected = """SELECT
+      (STR(?property) AS ?pid)
+      (LANG(?propertyLabel) AS ?lang)
+      (?propertyLabel AS ?plabel)
+      (?propertyDescription AS ?description)
+      (STR(?wbType) AS ?type_name)
+      ?formatterURI
+    WHERE {
+      ?property a wikibase:Property;
+        rdfs:label ?propertyLabel;
+        schema:description ?propertyDescription;
+        wikibase:propertyType ?wbType.
+      OPTIONAL { ?property wdt:P1921 ?formatterURI. }
+
+      FILTER(LANG(?propertyLabel) IN"""
         self.assertTrue(expected in sparql_query)
 
     def testCacheProperties(self):

@@ -62,6 +62,32 @@ class TestWikidata(BaseTest):
                     print(actual_qid)
                 self.assertEqual(expected_qid, actual_qid)
 
+    def test_getLabelAndDescription_missing_description(self):
+        """
+        getLabelAndDescription must not fail when an item has a label
+        but no description in the requested language.
+
+        Regression for the WDQS graph split / missing-en-description case:
+        Q2940591 (playing card manufacturer) has an English label but
+        no English schema:description. The description clause must be
+        OPTIONAL so the label still resolves.
+        """
+        from lodstorage.sparql import SPARQL
+
+        sparql = SPARQL("https://qlever.dev/api/wikidata", method="POST")
+        # Q2940591 has an en label but (currently) no en description
+        label, description = WikidataItem.getLabelAndDescription(
+            sparql, "Q2940591", "en", debug=self.debug
+        )
+        self.assertEqual("playing card manufacturer", label)
+        self.assertEqual("", description)
+        # Q5 (human) has both an en label and an en description
+        label, description = WikidataItem.getLabelAndDescription(
+            sparql, "Q5", "en", debug=self.debug
+        )
+        self.assertEqual("human", label)
+        self.assertTrue(len(description) > 0)
+
     def test_convert_to_claim(self):
         """
         tests convert_to_claim

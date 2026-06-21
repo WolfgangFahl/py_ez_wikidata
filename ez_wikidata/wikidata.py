@@ -918,8 +918,11 @@ WHERE
   }}
   ?item rdfs:label ?itemLabel.
   FILTER (LANG(?itemLabel) = "{lang}").
-  ?item schema:description ?itemDescription.
-  FILTER(LANG(?itemDescription) = "{lang}")
+  OPTIONAL {{
+    ?item schema:description ?descValue.
+    FILTER(LANG(?descValue) = "{lang}")
+  }}
+  BIND(COALESCE(?descValue, "") AS ?itemDescription)
 }}"""
         try:
             if debug:

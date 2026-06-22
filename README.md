@@ -1,5 +1,5 @@
 # py_ez_wikidata
-Mapping for Wikidata allows creation of wikidata entries from dicts
+Mapping for Wikidata allows simplified / easy creation of wikidata entries from dicts
 
 [![Join the discussion at https://github.com/WolfgangFahl/py_ez_wikidata/discussions](https://img.shields.io/github/discussions/WolfgangFahl/py_ez_wikidata)](https://github.com/WolfgangFahl/py_ez_wikidata/discussions)
 [![pypi](https://img.shields.io/pypi/pyversions/py_ez_wikidata)](https://pypi.org/project/py_ez_wikidata/)

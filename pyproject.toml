@@ -24,7 +24,9 @@ dependencies = [
 	# https://github.com/LeMyst/WikibaseIntegrator
 	"wikibaseintegrator>=0.12.15",
 	# https://pypi.org/project/pylodstorage/
-	"pylodstorage>=0.18.7"
+	# >=0.19.5 includes the issue #165 fix that rate-limits the SPARQL query
+	# path (query/queryAsListOfDicts), avoiding HTTP 429 against Wikidata/QLever
+	"pylodstorage>=0.19.5"
 ]
 
 requires-python = ">=3.10"

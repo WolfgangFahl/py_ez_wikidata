@@ -5,6 +5,7 @@ Created on 2022-07-24
 """
 
 import json
+import unittest
 
 from ez_wikidata.wdsearch import WikidataSearch
 from tests.basetest import BaseTest
@@ -15,6 +16,10 @@ class TestWikidataSearch(BaseTest):
     test the WikidataSearch
     """
 
+    @unittest.skipIf(
+        BaseTest.inPublicCI(),
+        "live Wikidata wbsearchentities REST API call - 403/blocked from CI runner IPs",
+    )
     def testWikidataSearch(self):
         """
         test Wikidata Search

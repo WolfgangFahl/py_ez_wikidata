@@ -56,7 +56,9 @@ class TrulyTabular(object):
         self.wpm = WikidataPropertyManager.get_instance(
             endpoint_url=endpointConf.endpoint
         )
-        self.sparql = SPARQL(endpointConf.endpoint, method=self.endpointConf.method)
+        # use the upstream factory so the endpoint's calls_per_minute rate limit
+        # and Wikimedia-policy User-Agent are applied (avoids HTTP 429/403)
+        self.sparql = SPARQL.fromEndpointConf(endpointConf)
         self.sparql.debug = self.debug
         self.search_predicate = search_predicate
         self.where = f"\n  {where}" if where is not None else ""

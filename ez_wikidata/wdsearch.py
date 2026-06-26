@@ -11,10 +11,16 @@ import urllib.parse
 import urllib.request
 from typing import List, Tuple
 
+from ez_wikidata.version import Version
+
 
 class WikidataSearch(object):
     """
     Wikidata Search API wrapper
+
+    Interactive (per-keyclick) search: it must fail fast and is deliberately
+    NOT rate limited - throttling/blocking belongs on the batch SPARQL path,
+    not on search-as-you-type.
     """
 
     def __init__(self, language: str = "en", timeout: float = 2.0):
@@ -23,11 +29,22 @@ class WikidataSearch(object):
 
         Args:
             language(str): the language to use e.g. en/fr
-            timeout(float): maximum time to wait for result
+            timeout(float): maximum time to wait for result - kept short so
+                interactive search fails fast rather than blocking the UI
         """
         self.language = language
         self.timeout = timeout
         self.logger = logging.getLogger(__name__)
+
+    @classmethod
+    def get_user_agent(cls) -> str:
+        """
+        Construct a Wikimedia-policy-compliant User-Agent string identifying
+        this project with a contact URL.
+        see https://meta.wikimedia.org/wiki/User-Agent_policy
+        """
+        user_agent = f"{Version.name}/{Version.version} ({Version.cm_url})"
+        return user_agent
 
     def searchOptions(
         self, searchFor: str, limit: int = 9
@@ -65,9 +82,9 @@ class WikidataSearch(object):
         return options
 
     def make_wikidata_request(self, apisearch: str):
-        """Make HTTP request to Wikidata API with proper user agent"""
+        """Make a fail-fast HTTP request to the Wikidata API with a policy User-Agent"""
         req = urllib.request.Request(
-            apisearch, headers={"User-Agent": "wdsearch/1.0 (webmaster@bitplan.com)"}
+            apisearch, headers={"User-Agent": self.get_user_agent()}
         )
         with urllib.request.urlopen(req, timeout=self.timeout) as url:
             return json.loads(url.read().decode())

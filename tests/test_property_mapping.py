@@ -4,7 +4,12 @@ Created on 2023-01-14
 @author: wf
 """
 
-from ez_wikidata.wdproperty import PropertyMapping, WdDatatype, WikidataPropertyManager
+from ez_wikidata.wdproperty import (
+    PropertyMapping,
+    PropertyMappings,
+    WdDatatype,
+    WikidataPropertyManager,
+)
 from tests.basetest import BaseTest
 
 
@@ -95,3 +100,30 @@ class TestPropertyMapping(BaseTest):
         self.assertIsNotNone(itemMapping)
         self.assertTrue(isinstance(itemMapping, PropertyMapping))
         self.assertTrue(itemMapping.is_item_itself())
+
+    def test_scholar_mapping(self):
+        """
+        test loading the bundled Scholar PropertyMappings (resources/scholar_props.yaml)
+        used to create a brand-new Wikidata entry for a scholar
+        """
+        scholar = PropertyMappings.of_name("scholar")
+        self.assertEqual("scholar_props", scholar.name)
+        # instance of human is fixed
+        self.assertEqual("P31", scholar.mappings["instanceof"].propertyId)
+        self.assertEqual("Q5", scholar.mappings["instanceof"].value)
+        # scholarly identifiers documented in Template:Scholar
+        expected = {
+            "orcid": "P496",
+            "dblp": "P2456",
+            "gnd": "P227",
+            "googleScholarUser": "P1960",
+            "homepage": "P856",
+            "linkedInId": "P6634",
+            "researchGate": "P6178",
+        }
+        for column, pid in expected.items():
+            self.assertEqual(pid, scholar.mappings[column].propertyId)
+        # EntitySchema cross-reference (P12861) round-trips as entity_schema
+        self.assertEqual(
+            WdDatatype.entity_schema, scholar.mappings["shacl"].property_type_enum
+        )

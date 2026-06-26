@@ -9,7 +9,7 @@ import unittest
 from pprint import pprint
 from urllib.error import HTTPError
 
-from lodstorage.query import Endpoint, EndpointManager, Query, QuerySyntaxHighlight
+from lodstorage.query import Endpoint, Query, QuerySyntaxHighlight
 from lodstorage.sparql import SPARQL
 
 from ez_wikidata.trulytabular import TrulyTabular
@@ -36,10 +36,7 @@ class TestTrulyTabular(unittest.TestCase):
 
         # in public CI use the self-hosted RWTH WDQS mirror (public WDQS
         # rejects datacenter IPs); locally use the default WDQS
-        wikidataConf = EndpointManager.getEndpoints().get(
-            "wikidata-rwth" if BaseTest.inPublicCI() else "wikidata"
-        )
-        self.endpointConfs = [qleverEndpoint, wikidataConf]
+        self.endpointConfs = [qleverEndpoint, BaseTest.getWikidataEndpoint()]
 
     def handleServiceUnavailable(self, ex, endpointConf):
         """

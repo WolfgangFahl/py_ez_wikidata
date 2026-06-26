@@ -9,6 +9,8 @@ import os
 import time
 from unittest import TestCase
 
+from lodstorage.query import Endpoint
+
 
 class BaseTest(TestCase):
     """
@@ -39,12 +41,22 @@ class BaseTest(TestCase):
         return publicCI
 
     @staticmethod
-    def getEndpointName():
+    def getWikidataEndpoint() -> Endpoint:
         """
-        name of the SPARQL endpoint to query in tests: the self-hosted RWTH
-        mirror in public CI (public WDQS rejects datacenter IPs), else WDQS
+        SPARQL endpoint to query in tests: the self-hosted RWTH WDQS mirror in
+        public CI (public WDQS rejects datacenter IPs with 403), else WDQS.
+
+        The endpoint is built inline so it does not depend on a named entry in
+        the local ~/.pylodstorage endpoint registry (absent on CI).
         """
-        return "wikidata-rwth" if BaseTest.inPublicCI() else "wikidata"
+        if not BaseTest.inPublicCI():
+            return Endpoint.getDefault()
+        endpoint = Endpoint()
+        endpoint.name = "wikidata-rwth"
+        endpoint.endpoint = "https://wdqs.wikidata.dbis.rwth-aachen.de/sparql"
+        endpoint.method = "POST"
+        endpoint.database = "blazegraph"
+        return endpoint
 
     @staticmethod
     def inLocalCI():

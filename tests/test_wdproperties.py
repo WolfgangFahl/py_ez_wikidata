@@ -7,7 +7,12 @@ Created on 2024-03-03
 from lodstorage.prefixes import Prefixes
 from lodstorage.sparql import SPARQL
 
-from ez_wikidata.wdproperty import PropertyMapping, WdDatatype, WikidataPropertyManager
+from ez_wikidata.wdproperty import (
+    PropertyMapping,
+    WdDatatype,
+    WikidataPropertyManager,
+    with_user_agent,
+)
 from tests.basetest import BaseTest
 
 
@@ -21,9 +26,13 @@ class TestWikidataProperties(BaseTest):
         setUp the tests cases
         """
         super().setUp(debug, profile)
-        self.endpoint_url = "https://qlever.dev/api/wikidata"
-        self.sparql = SPARQL(self.endpoint_url)
-        self.wpm = WikidataPropertyManager(debug=debug, with_load=False)
+        # inject the test endpoint (RWTH mirror in CI) so live queries do not
+        # hit public endpoints that reject datacenter IPs with 403
+        self.endpoint_url = self.getWikidataEndpoint().endpoint
+        self.sparql = with_user_agent(SPARQL(self.endpoint_url))
+        self.wpm = WikidataPropertyManager(
+            endpoint_url=self.endpoint_url, debug=debug, with_load=False
+        )
 
     def testSPARQL_Query(self):
         """

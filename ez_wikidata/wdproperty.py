@@ -18,6 +18,21 @@ from lodstorage.profiler import Profiler
 from lodstorage.sparql import SPARQL
 from lodstorage.sql import SQLDB
 
+from ez_wikidata.version import Version
+
+# Wikimedia User-Agent policy: a descriptive User-Agent with a contact URL is
+# required, otherwise WDQS rejects requests with HTTP 403 (notably from
+# datacenter IPs such as CI runners). pylodstorage's default UA is generic, so
+# we override it on every SPARQL accessor we create.
+# see https://meta.wikimedia.org/wiki/User-Agent_policy
+WIKIDATA_USER_AGENT = f"{Version.name}/{Version.version} ({Version.cm_url})"
+
+
+def with_user_agent(sparql: SPARQL) -> SPARQL:
+    """set the Wikimedia-policy User-Agent on the given SPARQL accessor"""
+    sparql.sparql.agent = WIKIDATA_USER_AGENT
+    return sparql
+
 
 class WdDatatype(Enum):
     """
@@ -200,7 +215,7 @@ class WikidataPropertyManager:
         self.langs = langs
         self.debug = debug
         self.profile = profile
-        self.sparql = SPARQL(endpoint_url, debug=self.debug)
+        self.sparql = with_user_agent(SPARQL(endpoint_url, debug=self.debug))
         self.sql_db_path = WikidataPropertyManager.get_cache_path()
         self.sql_db = SQLDB(self.sql_db_path)
         self.sparql_query = self.get_query_for_langs(langs)

@@ -39,6 +39,14 @@ class BaseTest(TestCase):
         return publicCI
 
     @staticmethod
+    def getEndpointName():
+        """
+        name of the SPARQL endpoint to query in tests: the self-hosted RWTH
+        mirror in public CI (public WDQS rejects datacenter IPs), else WDQS
+        """
+        return "wikidata-rwth" if BaseTest.inPublicCI() else "wikidata"
+
+    @staticmethod
     def inLocalCI():
         jenkins = "JENKINS_HOME" in os.environ
         return jenkins

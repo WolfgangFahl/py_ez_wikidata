@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Union
 
 import dateutil.parser
 from lodstorage.prefixes import Prefixes
-from lodstorage.query import Endpoint
+from lodstorage.query import Endpoint, EndpointManager
 from lodstorage.sparql import SPARQL
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
@@ -92,6 +92,7 @@ class Wikidata:
         baseurl: str = None,
         wpm: WikidataPropertyManager = None,
         debug: bool = False,
+        endpointName: str = "wikidata",
     ):
         """
         Constructor
@@ -100,6 +101,8 @@ class Wikidata:
             baseurl(str): the baseurl of the wikibase to use
             debug(bool): if True output debug information
             wpm(WikidataPropertymanager):
+            endpointName(str): name of the SPARQL endpoint in the lodstorage
+                registry to use for read queries (e.g. "wikidata-rwth")
         """
         if baseurl is None:
             baseurl = self.WD_URL
@@ -109,9 +112,9 @@ class Wikidata:
         self.login = None
         self.user = None
         self._wbi = None
-        # SPARQL endpoint configuration (WDQS by default); carries the
-        # calls_per_minute rate limit and Wikimedia-policy User-Agent
-        self.endpointConf = Endpoint.getDefault()
+        # SPARQL endpoint configuration resolved by name from the registry;
+        # carries the calls_per_minute rate limit (User-Agent set separately)
+        self.endpointConf = EndpointManager.getEndpoints().get(endpointName)
         self._query_sparql = None
         if wpm is None:
             wpm = WikidataPropertyManager.get_instance()
@@ -774,7 +777,8 @@ class Wikidata:
         """ % (
             property_id
         )
-        sparql = with_user_agent(SPARQL.fromEndpointConf(Endpoint.getDefault()))
+        endpointConf = EndpointManager.getEndpoints().get("wikidata")
+        sparql = with_user_agent(SPARQL.fromEndpointConf(endpointConf))
         itemRows = sparql.queryAsListOfDicts(query)
         wikibase_prefix = "http://wikiba.se/ontology#"
         types = []

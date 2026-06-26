@@ -77,9 +77,9 @@ class TestWikidata(BaseTest):
         no English schema:description. The description clause must be
         OPTIONAL so the label still resolves.
         """
-        from lodstorage.sparql import SPARQL
-
-        sparql = SPARQL("https://qlever.dev/api/wikidata", method="POST")
+        # use the injected endpoint (RWTH mirror in CI) instead of a public
+        # endpoint that rejects datacenter IPs with 403
+        sparql = self.wd.query_sparql
         # Q2940591 has an en label but (currently) no en description
         label, description = WikidataItem.getLabelAndDescription(
             sparql, "Q2940591", "en", debug=self.debug

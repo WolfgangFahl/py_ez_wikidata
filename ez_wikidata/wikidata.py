@@ -43,6 +43,7 @@ from ez_wikidata.wdproperty import (
     Variable,
     WdDatatype,
     WikidataPropertyManager,
+    with_user_agent,
 )
 
 
@@ -123,7 +124,9 @@ class Wikidata:
         the configured endpoint (avoids HTTP 429/403 from Wikidata)
         """
         if self._query_sparql is None:
-            self._query_sparql = SPARQL.fromEndpointConf(self.endpointConf)
+            self._query_sparql = with_user_agent(
+                SPARQL.fromEndpointConf(self.endpointConf)
+            )
             self._query_sparql.debug = self.debug
         return self._query_sparql
 
@@ -771,7 +774,7 @@ class Wikidata:
         """ % (
             property_id
         )
-        sparql = SPARQL.fromEndpointConf(Endpoint.getDefault())
+        sparql = with_user_agent(SPARQL.fromEndpointConf(Endpoint.getDefault()))
         itemRows = sparql.queryAsListOfDicts(query)
         wikibase_prefix = "http://wikiba.se/ontology#"
         types = []

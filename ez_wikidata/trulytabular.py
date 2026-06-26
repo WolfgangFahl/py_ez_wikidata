@@ -15,7 +15,11 @@ from lodstorage.query import Endpoint, Query, QueryManager, YamlPath
 from lodstorage.sparql import SPARQL
 from lodstorage.version import Version
 
-from ez_wikidata.wdproperty import WikidataProperty, WikidataPropertyManager
+from ez_wikidata.wdproperty import (
+    WikidataProperty,
+    WikidataPropertyManager,
+    with_user_agent,
+)
 from ez_wikidata.wikidata import WikidataItem
 
 
@@ -58,7 +62,7 @@ class TrulyTabular(object):
         )
         # use the upstream factory so the endpoint's calls_per_minute rate limit
         # and Wikimedia-policy User-Agent are applied (avoids HTTP 429/403)
-        self.sparql = SPARQL.fromEndpointConf(endpointConf)
+        self.sparql = with_user_agent(SPARQL.fromEndpointConf(endpointConf))
         self.sparql.debug = self.debug
         self.search_predicate = search_predicate
         self.where = f"\n  {where}" if where is not None else ""

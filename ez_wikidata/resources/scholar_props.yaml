@@ -1,0 +1,51 @@
+name: scholar_props
+mappings:
+  instanceof:
+    column: instanceof
+    propertyName: instance of
+    propertyId: P31
+    propertyType: itemid
+    value: Q5
+  orcid:
+    column: orcid
+    propertyName: ORCID iD
+    propertyId: P496
+    propertyType: extid
+  dblp:
+    column: dblp
+    propertyName: DBLP author ID
+    propertyId: P2456
+    propertyType: extid
+  gnd:
+    column: gnd
+    propertyName: GND ID
+    propertyId: P227
+    propertyType: extid
+  googleScholarUser:
+    column: googleScholarUser
+    propertyName: Google Scholar author ID
+    propertyId: P1960
+    propertyType: extid
+  homepage:
+    column: homepage
+    propertyName: official website
+    propertyId: P856
+    propertyType: url
+  linkedInId:
+    column: linkedInId
+    propertyName: LinkedIn personal profile ID
+    propertyId: P6634
+    propertyType: extid
+  researchGate:
+    column: researchGate
+    propertyName: ResearchGate profile ID
+    propertyId: P6178
+    propertyType: extid
+  shacl:
+    column: shacl
+    propertyName: EntitySchema for this class
+    propertyId: P12861
+    propertyType: entity_schema
+description: Scholar property mappings (Wikidata human + scholarly identifiers); columns
+  match Template:Scholar
+url: https://media.bitplan.com/index.php/Concept:Scholar

@@ -6,6 +6,7 @@ from datetime import datetime
 from lodstorage.lod import LOD
 from wikibaseintegrator.datatypes import (
     URL,
+    EntitySchema,
     ExternalID,
     Item,
     MonolingualText,
@@ -134,6 +135,12 @@ class TestWikidata(BaseTest):
             propertyName="volume",
             propertyType=WdDatatype.string,
         )
+        entity_schema = PropertyMapping(
+            column="shacl",
+            propertyId="P12861",
+            propertyName="EntitySchema for this class",
+            propertyType=WdDatatype.entity_schema,
+        )
         test_params = [  # (value, expected value, expected  type, property mapping)
             ("AAAI", {"text": "AAAI", "language": "en"}, MonolingualText, acronym),
             ("http://ceur-ws.org/", "http://ceur-ws.org/", URL, homepage),
@@ -173,6 +180,12 @@ class TestWikidata(BaseTest):
             ("1", "1", String, volume),
             ("A", "A", String, volume),
             (1, "1", String, volume),
+            (
+                "E42",
+                {"entity-type": "entity-schema", "id": "E42"},
+                EntitySchema,
+                entity_schema,
+            ),
         ]
         for params in test_params:
             with self.subTest("test statement generation", params=params):

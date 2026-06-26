@@ -41,6 +41,7 @@ class WdDatatype(Enum):
     musical_notation = auto()  # MusicalNotation: 6 occurrences
     tabular_data = auto()  # TabularData: 6 occurrences
     geoshape = auto()  # GeoShape: 3 occurrences
+    entity_schema = auto()  # EntitySchema: cross-reference to an E-id schema
     # Special cases:
     item = auto()  # Item: Special case
     year = auto()  # Year: Special case
@@ -72,6 +73,7 @@ class WdDatatype(Enum):
             "MusicalNotation": cls.musical_notation,
             "TabularData": cls.tabular_data,
             "GeoShape": cls.geoshape,
+            "EntitySchema": cls.entity_schema,
         }
         wb_type_name = wb_type_name.replace("http://wikiba.se/ontology#", "")
         wd_type = type_map.get(wb_type_name, WdDatatype.string)
@@ -101,6 +103,7 @@ class WdDatatype(Enum):
             "String": cls.string,
             "ExternalId": cls.extid,
             "Url": cls.url,
+            "EntitySchema": cls.entity_schema,
         }
         return wikibase_map.get(property_type, None)
 
@@ -649,3 +652,22 @@ class PropertyMappings:
     mappings: Dict[str, PropertyMapping] = field(default_factory=dict)
     description: Optional[str] = None
     url: Optional[str] = None
+
+    @classmethod
+    def of_name(cls, name: str) -> "PropertyMappings":
+        """
+        load the bundled PropertyMappings resource of the given name
+        (e.g. "scholar" -> resources/scholar_props.yaml), mirroring the
+        existing sb_props.yaml convention.
+
+        Args:
+            name(str): the use-case name (resource is <name>_props.yaml)
+
+        Returns:
+            PropertyMappings: the loaded mapping set
+        """
+        path = os.path.join(
+            os.path.dirname(__file__), "resources", f"{name}_props.yaml"
+        )
+        property_mappings = cls.load_from_yaml_file(path)
+        return property_mappings

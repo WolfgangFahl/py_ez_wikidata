@@ -18,11 +18,13 @@ from typing import Dict, List, Optional, Union
 
 import dateutil.parser
 from lodstorage.prefixes import Prefixes
+from lodstorage.query import Endpoint
 from lodstorage.sparql import SPARQL
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
     URL,
     BaseDataType,
+    EntitySchema,
     ExternalID,
     Item,
     MonolingualText,
@@ -106,9 +108,24 @@ class Wikidata:
         self.login = None
         self.user = None
         self._wbi = None
+        # SPARQL endpoint configuration (WDQS by default); carries the
+        # calls_per_minute rate limit and Wikimedia-policy User-Agent
+        self.endpointConf = Endpoint.getDefault()
+        self._query_sparql = None
         if wpm is None:
             wpm = WikidataPropertyManager.get_instance()
         self.wpm = wpm
+
+    @property
+    def query_sparql(self) -> SPARQL:
+        """
+        lazily created rate-limited SPARQL accessor for read queries against
+        the configured endpoint (avoids HTTP 429/403 from Wikidata)
+        """
+        if self._query_sparql is None:
+            self._query_sparql = SPARQL.fromEndpointConf(self.endpointConf)
+            self._query_sparql.debug = self.debug
+        return self._query_sparql
 
     @property
     def wbi(self) -> WikibaseIntegrator:
@@ -227,9 +244,7 @@ class Wikidata:
             itemType,
             itemLabel,
         )
-        endpointUrl = "https://query.wikidata.org/sparql"
-        sparql = SPARQL(endpointUrl)
-        itemRows = sparql.queryAsListOfDicts(sparqlQuery)
+        itemRows = self.query_sparql.queryAsListOfDicts(sparqlQuery)
         item = None
         if len(itemRows) > 0:
             item = itemRows[0]["item"].replace("http://www.wikidata.org/entity/", "")
@@ -661,6 +676,9 @@ class Wikidata:
             statement = URL(value=value, prop_nr=pm.propertyId)
         elif pm.property_type_enum is WdDatatype.itemid:
             statement = Item(value=value, prop_nr=pm.propertyId)
+        elif pm.property_type_enum is WdDatatype.entity_schema:
+            # cross-reference to an EntitySchema E-id (e.g. P12861 -> E42)
+            statement = EntitySchema(value=value, prop_nr=pm.propertyId)
         else:
             raise Exception(
                 f"({pm.property_type_enum}) unknown or not supported datatype"
@@ -753,8 +771,7 @@ class Wikidata:
         """ % (
             property_id
         )
-        endpointUrl = "https://query.wikidata.org/sparql"
-        sparql = SPARQL(endpointUrl)
+        sparql = SPARQL.fromEndpointConf(Endpoint.getDefault())
         itemRows = sparql.queryAsListOfDicts(query)
         wikibase_prefix = "http://wikiba.se/ontology#"
         types = []

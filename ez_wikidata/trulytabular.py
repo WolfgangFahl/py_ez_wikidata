@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Union
 
 from lodstorage.prefixes import Prefixes
-from lodstorage.query import Endpoint, EndpointManager, Query, QueryManager, YamlPath
+from lodstorage.query import Endpoint, Query, QueryManager, YamlPath
 from lodstorage.sparql import SPARQL
 from lodstorage.version import Version
 
@@ -55,7 +55,7 @@ class TrulyTabular(object):
         self.itemQid = itemQid
         self.debug = debug
         if endpointConf is None:
-            endpointConf = EndpointManager.getEndpoints().get("wikidata")
+            endpointConf = Endpoint.getDefault()
         self.endpointConf = endpointConf
         self.wpm = WikidataPropertyManager.get_instance(
             endpoint_url=endpointConf.endpoint

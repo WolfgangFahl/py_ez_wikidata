@@ -34,7 +34,9 @@ class TestWikidata(BaseTest):
     def setUp(self, debug=False, profile=True):
         super().setUp(debug, profile)
         self.wd = Wikidata(
-            "https://www.wikidata.org", debug=debug, endpointName=self.getEndpointName()
+            "https://www.wikidata.org",
+            debug=debug,
+            endpointConf=self.getWikidataEndpoint(),
         )
         self._test_wd = None
 

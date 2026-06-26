@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Union
 
 import dateutil.parser
 from lodstorage.prefixes import Prefixes
-from lodstorage.query import Endpoint, EndpointManager
+from lodstorage.query import Endpoint
 from lodstorage.sparql import SPARQL
 from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.datatypes import (
@@ -92,7 +92,7 @@ class Wikidata:
         baseurl: str = None,
         wpm: WikidataPropertyManager = None,
         debug: bool = False,
-        endpointName: str = "wikidata",
+        endpointConf: Endpoint = None,
     ):
         """
         Constructor
@@ -101,8 +101,8 @@ class Wikidata:
             baseurl(str): the baseurl of the wikibase to use
             debug(bool): if True output debug information
             wpm(WikidataPropertymanager):
-            endpointName(str): name of the SPARQL endpoint in the lodstorage
-                registry to use for read queries (e.g. "wikidata-rwth")
+            endpointConf(Endpoint): the SPARQL endpoint to use for read queries
+                (defaults to the Wikidata Query Service)
         """
         if baseurl is None:
             baseurl = self.WD_URL
@@ -112,9 +112,11 @@ class Wikidata:
         self.login = None
         self.user = None
         self._wbi = None
-        # SPARQL endpoint configuration resolved by name from the registry;
-        # carries the calls_per_minute rate limit (User-Agent set separately)
-        self.endpointConf = EndpointManager.getEndpoints().get(endpointName)
+        # SPARQL endpoint configuration (WDQS by default); the User-Agent is
+        # applied separately via with_user_agent
+        if endpointConf is None:
+            endpointConf = Endpoint.getDefault()
+        self.endpointConf = endpointConf
         self._query_sparql = None
         if wpm is None:
             wpm = WikidataPropertyManager.get_instance()
@@ -752,8 +754,7 @@ class Wikidata:
             label = label[: limit - len(postfix)] + postfix
         return label
 
-    @classmethod
-    def get_datatype_of_property(cls, property_id: Union[str, int]) -> Union[str, None]:
+    def get_datatype_of_property(self, property_id: Union[str, int]) -> Union[str, None]:
         """
         Get the datatype of the given property
         Args:
@@ -777,9 +778,7 @@ class Wikidata:
         """ % (
             property_id
         )
-        endpointConf = EndpointManager.getEndpoints().get("wikidata")
-        sparql = with_user_agent(SPARQL.fromEndpointConf(endpointConf))
-        itemRows = sparql.queryAsListOfDicts(query)
+        itemRows = self.query_sparql.queryAsListOfDicts(query)
         wikibase_prefix = "http://wikiba.se/ontology#"
         types = []
         for record in itemRows:
@@ -791,8 +790,7 @@ class Wikidata:
             return None
         return types[0]
 
-    @classmethod
-    def get_wddatatype_of_property(cls, property_id: Union[str, int]) -> "WdDatatype":
+    def get_wddatatype_of_property(self, property_id: Union[str, int]) -> "WdDatatype":
         """
         Get the datatype of the given property
         Args:
@@ -801,7 +799,7 @@ class Wikidata:
         Returns:
             WdDatatype of the property of None if no datatype is defined
         """
-        property_type = cls.get_datatype_of_property(property_id)
+        property_type = self.get_datatype_of_property(property_id)
         return WdDatatype.get_by_wikibase(property_type)
 
     def normalize_records(self, record: dict, prop_map: typing.List["PropertyMapping"]):

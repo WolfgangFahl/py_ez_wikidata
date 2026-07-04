@@ -77,6 +77,16 @@ class EzWdCmd(BaseCmd):
             action="store_true",
             help="actually write to Wikidata (default: dry-run, nothing is written)",
         )
+        parser.add_argument(
+            "--baseurl",
+            default=Wikidata.WD_URL,
+            help="wikibase baseurl to write to (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--test",
+            action="store_true",
+            help=f"shortcut for --baseurl {Wikidata.TEST_WD_URL}",
+        )
         return parser
 
     def handle_args(self, args: Namespace) -> bool:
@@ -97,7 +107,8 @@ class EzWdCmd(BaseCmd):
         elif args.mapping and args.list_mappings:
             self.list_mapping(args.mapping)
         elif args.mapping and args.record:
-            self.create(args.mapping, args.record, args.lang, args.write)
+            baseurl = Wikidata.TEST_WD_URL if args.test else args.baseurl
+            self.create(args.mapping, args.record, args.lang, args.write, baseurl)
         else:
             self.parser.print_help()
         return True
@@ -144,7 +155,14 @@ class EzWdCmd(BaseCmd):
                 record = yaml.safe_load(record_file)
         return record
 
-    def create(self, name: str, record_path: str, lang: str, write: bool):
+    def create(
+        self,
+        name: str,
+        record_path: str,
+        lang: str,
+        write: bool,
+        baseurl: str = None,
+    ):
         """
         create (or dry-run) a Wikidata item from the given record using the
         named property mapping
@@ -154,10 +172,12 @@ class EzWdCmd(BaseCmd):
             record_path(str): path to the YAML/JSON record file
             lang(str): the language to use
             write(bool): if True actually write to Wikidata
+            baseurl(str): the wikibase baseurl to write to (defaults to
+                production Wikidata)
         """
         mappings = PropertyMappings.of_name(name)
         record = self.load_record(record_path)
-        wd = Wikidata()
+        wd = Wikidata(baseurl=baseurl)
         if write:
             wd.loginWithCredentials()
         result = wd.add_record(

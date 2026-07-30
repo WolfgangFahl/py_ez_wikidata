@@ -1,0 +1,57 @@
+name: extension_props
+mappings:
+  instanceof:
+    column: instanceof
+    propertyName: instance of
+    propertyId: P31
+    propertyType: itemid
+    value: Q6805426
+  sourcecode:
+    column: sourcecode
+    propertyName: source code repository URL
+    propertyId: P1324
+    propertyType: url
+  vcs:
+    column: vcs
+    propertyName: version control system
+    propertyId: P8423
+    propertyType: itemid
+    qualifierOf: sourcecode
+    value: Q186055
+  webinterface:
+    column: webinterface
+    propertyName: web interface software
+    propertyId: P10627
+    propertyType: itemid
+    qualifierOf: sourcecode
+    value: Q364
+  bugtracker:
+    column: bugtracker
+    propertyName: bug tracking system
+    propertyId: P1401
+    propertyType: url
+  developer:
+    column: developer
+    propertyName: developer
+    propertyId: P178
+    propertyType: itemid
+  license:
+    column: license
+    propertyName: copyright license
+    propertyId: P275
+    propertyType: itemid
+  homepage:
+    column: homepage
+    propertyName: official website
+    propertyId: P856
+    propertyType: url
+  homepagelanguage:
+    column: homepagelanguage
+    propertyName: language of work or name
+    propertyId: P407
+    propertyType: itemid
+    qualifierOf: homepage
+    value: Q1860
+description: MediaWiki extension property mappings (P31=Q6805426); columns match
+  Template:Extension
+url: https://media.bitplan.com/index.php/Concept:Extension

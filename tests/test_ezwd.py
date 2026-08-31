@@ -8,6 +8,7 @@ import io
 from contextlib import redirect_stdout
 
 from ez_wikidata.ezwd_cmd import EzWdCmd, main
+from ez_wikidata.wdproperty import PropertyMappings
 from tests.basetest import BaseTest
 
 
@@ -43,6 +44,35 @@ class TestEzWdCmd(BaseTest):
         out = self.run_cmd([])
         self.assertIn("usage:", out)
         self.assertIn("--mapping", out)
+
+    def test_preview(self):
+        """
+        test that the dry-run preview shows the statements that would be
+        written and warns about record columns the mapping does not cover
+        """
+        record = {
+            "label": "Test Person",
+            "description": "test",
+            "instanceof": "Q5",
+            "occupation": "Q1650915",
+            "researchGate": "Test-Person",
+            "researchGateTypo": "xyz",
+        }
+        cmd = EzWdCmd()
+        mappings = PropertyMappings.of_name("scholar")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            unmapped = cmd.preview(record, mappings)
+        out = buf.getvalue()
+        self.assertEqual(["researchGateTypo"], unmapped)
+        for token in [
+            "Test Person",
+            "P31 instance of = Q5",
+            "P106 occupation = Q1650915",
+            "P2038 ResearchGate profile ID = Test-Person",
+            "warning: no mapping for column researchGateTypo",
+        ]:
+            self.assertIn(token, out)
 
     def test_construct(self):
         """

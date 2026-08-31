@@ -7,6 +7,7 @@ ezwd command line interface
 """
 
 import json
+import sys
 from argparse import ArgumentParser, Namespace
 from typing import List, Optional
 
@@ -78,6 +79,11 @@ class EzWdCmd(BaseCmd):
             help="actually write to Wikidata (default: dry-run, nothing is written)",
         )
         parser.add_argument(
+            "--strict",
+            action="store_true",
+            help="fail with exit code 1 when the record has columns the mapping does not cover",
+        )
+        parser.add_argument(
             "--baseurl",
             default=Wikidata.WD_URL,
             help="wikibase baseurl to write to (default: %(default)s)",
@@ -108,7 +114,16 @@ class EzWdCmd(BaseCmd):
             self.list_mapping(args.mapping)
         elif args.mapping and args.record:
             baseurl = Wikidata.TEST_WD_URL if args.test else args.baseurl
-            self.create(args.mapping, args.record, args.lang, args.write, baseurl)
+            exit_code = self.create(
+                args.mapping,
+                args.record,
+                args.lang,
+                args.write,
+                baseurl,
+                args.strict,
+            )
+            if exit_code != 0:
+                raise SystemExit(exit_code)
         else:
             self.parser.print_help()
         return True
@@ -155,6 +170,31 @@ class EzWdCmd(BaseCmd):
                 record = yaml.safe_load(record_file)
         return record
 
+    def preview(self, record: dict, mappings: "PropertyMappings") -> List[str]:
+        """
+        show what would be written: label, description and one line per
+        statement, plus the record columns the mapping does not cover
+
+        Args:
+            record(dict): the record to be written
+            mappings(PropertyMappings): the mapping to apply
+
+        Returns:
+            list: the record columns that match no mapping column
+        """
+        print(f"label: {record.get('label', '')}")
+        print(f"description: {record.get('description', '')}")
+        for column, pm in mappings.mappings.items():
+            value = record.get(column, pm.value)
+            if value is None:
+                continue
+            print(f"  {pm.propertyId} {pm.propertyName} = {value}")
+        covered = set(mappings.mappings.keys()) | {"label", "description"}
+        unmapped = [column for column in record if column not in covered]
+        for column in unmapped:
+            print(f"warning: no mapping for column {column} - value is ignored")
+        return unmapped
+
     def create(
         self,
         name: str,
@@ -162,7 +202,8 @@ class EzWdCmd(BaseCmd):
         lang: str,
         write: bool,
         baseurl: str = None,
-    ):
+        strict: bool = False,
+    ) -> int:
         """
         create (or dry-run) a Wikidata item from the given record using the
         named property mapping
@@ -174,9 +215,17 @@ class EzWdCmd(BaseCmd):
             write(bool): if True actually write to Wikidata
             baseurl(str): the wikibase baseurl to write to (defaults to
                 production Wikidata)
+            strict(bool): if True refuse to proceed on unmapped record columns
+
+        Returns:
+            int: 0 on success, 1 when strict and the record has unmapped columns
         """
         mappings = PropertyMappings.of_name(name)
         record = self.load_record(record_path)
+        unmapped = self.preview(record, mappings)
+        if unmapped and strict:
+            print(f"strict: {len(unmapped)} unmapped column(s) - nothing done")
+            return 1
         wd = Wikidata(baseurl=baseurl)
         if write:
             wd.loginWithCredentials()
@@ -191,6 +240,7 @@ class EzWdCmd(BaseCmd):
             print(f"{mode} {result.qid}: {wd.baseurl}/wiki/{result.qid}")
         else:
             print(f"{mode} (no item id; use --write to create on Wikidata)")
+        return 0
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -209,4 +259,4 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

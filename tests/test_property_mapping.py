@@ -92,6 +92,29 @@ class TestPropertyMapping(BaseTest):
                 property_type, expected = param
                 self.assertEqual(expected, WdDatatype(property_type))
 
+    def test_bundled_mappings_consistent(self):
+        """
+        test that in every bundled mapping the propertyId resolves to the
+        propertyName - a mismatched pair would silently write a wrong claim
+        e.g. researchGate with P6178 (Dimensions author ID) instead of P2038
+        """
+        for name in ["scholar", "extension"]:
+            property_mappings = PropertyMappings.of_name(name)
+            for column, mapping in property_mappings.mappings.items():
+                if mapping.propertyId is None or mapping.propertyName is None:
+                    continue
+                with self.subTest(mapping=f"{name}.{column}"):
+                    wd_property = self.wpm.get_property_by_id(mapping.propertyId)
+                    self.assertIsNotNone(
+                        wd_property,
+                        f"{name}.{column}: unknown property {mapping.propertyId}",
+                    )
+                    self.assertEqual(
+                        mapping.propertyName,
+                        wd_property.plabel,
+                        f"{name}.{column}: {mapping.propertyId} is '{wd_property.plabel}' not '{mapping.propertyName}'",
+                    )
+
     def test_DefaultItemPropertyMapping(self):
         """
         test the default item PropertyMapping
@@ -119,7 +142,8 @@ class TestPropertyMapping(BaseTest):
             "googleScholarUser": "P1960",
             "homepage": "P856",
             "linkedInId": "P6634",
-            "researchGate": "P6178",
+            "researchGate": "P2038",
+            "occupation": "P106",
         }
         for column, pid in expected.items():
             self.assertEqual(pid, scholar.mappings[column].propertyId)

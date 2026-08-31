@@ -6,6 +6,11 @@ mappings:
     propertyId: P31
     propertyType: itemid
     value: Q5
+  occupation:
+    column: occupation
+    propertyName: occupation
+    propertyId: P106
+    propertyType: itemid
   orcid:
     column: orcid
     propertyName: ORCID iD
@@ -39,7 +44,7 @@ mappings:
   researchGate:
     column: researchGate
     propertyName: ResearchGate profile ID
-    propertyId: P6178
+    propertyId: P2038
     propertyType: extid
   shacl:
     column: shacl

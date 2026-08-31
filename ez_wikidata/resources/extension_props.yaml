@@ -27,7 +27,7 @@ mappings:
     value: Q364
   bugtracker:
     column: bugtracker
-    propertyName: bug tracking system
+    propertyName: issue tracker URL
     propertyId: P1401
     propertyType: url
   developer:

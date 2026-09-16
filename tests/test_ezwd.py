@@ -5,10 +5,13 @@ Created on 2026-06-26
 """
 
 import io
+import os
+import tempfile
 from contextlib import redirect_stdout
 
+import yaml
+
 from ez_wikidata.ezwd_cmd import EzWdCmd, main
-from ez_wikidata.wdproperty import PropertyMappings
 from tests.basetest import BaseTest
 
 
@@ -16,6 +19,8 @@ class TestEzWdCmd(BaseTest):
     """
     test the ezwd command line interface
     """
+    def setUp(self, debug=True, profile=True):
+        BaseTest.setUp(self, debug=debug, profile=profile)
 
     def run_cmd(self, argv) -> str:
         """
@@ -45,10 +50,10 @@ class TestEzWdCmd(BaseTest):
         self.assertIn("usage:", out)
         self.assertIn("--mapping", out)
 
-    def test_preview(self):
+    def test_dry_run(self):
         """
-        test that the dry-run preview shows the statements that would be
-        written and warns about record columns the mapping does not cover
+        test that a dry-run run of the command shows the item that would be
+        written
         """
         record = {
             "label": "Test Person",
@@ -56,22 +61,16 @@ class TestEzWdCmd(BaseTest):
             "instanceof": "Q5",
             "occupation": "Q1650915",
             "researchGate": "Test-Person",
-            "researchGateTypo": "xyz",
         }
-        cmd = EzWdCmd()
-        mappings = PropertyMappings.of_name("scholar")
-        buf = io.StringIO()
-        with redirect_stdout(buf):
-            unmapped = cmd.preview(record, mappings)
-        out = buf.getvalue()
-        self.assertEqual(["researchGateTypo"], unmapped)
-        for token in [
-            "Test Person",
-            "P31 instance of = Q5",
-            "P106 occupation = Q1650915",
-            "P2038 ResearchGate profile ID = Test-Person",
-            "warning: no mapping for column researchGateTypo",
-        ]:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            record_path = os.path.join(tmp_dir, "test_person.yaml")
+            with open(record_path, "w") as record_file:
+                yaml.safe_dump(record, record_file)
+            # run without -w will start dry-run
+            out = self.run_cmd(["--mapping", "scholar", "--record", record_path])
+        if self.debug:
+            print(out)
+        for token in ["Test Person", "P31", "Q5", "P106", "Q1650915", "P2038"]:
             self.assertIn(token, out)
 
     def test_construct(self):

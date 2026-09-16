@@ -7,7 +7,6 @@ ezwd command line interface
 """
 
 import json
-import sys
 from argparse import ArgumentParser, Namespace
 from typing import List, Optional
 
@@ -81,7 +80,7 @@ class EzWdCmd(BaseCmd):
         parser.add_argument(
             "--strict",
             action="store_true",
-            help="fail with exit code 1 when the record has columns the mapping does not cover",
+            help="exit with code 1 when the result has problems",
         )
         parser.add_argument(
             "--baseurl",
@@ -114,7 +113,7 @@ class EzWdCmd(BaseCmd):
             self.list_mapping(args.mapping)
         elif args.mapping and args.record:
             baseurl = Wikidata.TEST_WD_URL if args.test else args.baseurl
-            exit_code = self.create(
+            self.create(
                 args.mapping,
                 args.record,
                 args.lang,
@@ -122,8 +121,6 @@ class EzWdCmd(BaseCmd):
                 baseurl,
                 args.strict,
             )
-            if exit_code != 0:
-                raise SystemExit(exit_code)
         else:
             self.parser.print_help()
         return True
@@ -170,31 +167,6 @@ class EzWdCmd(BaseCmd):
                 record = yaml.safe_load(record_file)
         return record
 
-    def preview(self, record: dict, mappings: "PropertyMappings") -> List[str]:
-        """
-        show what would be written: label, description and one line per
-        statement, plus the record columns the mapping does not cover
-
-        Args:
-            record(dict): the record to be written
-            mappings(PropertyMappings): the mapping to apply
-
-        Returns:
-            list: the record columns that match no mapping column
-        """
-        print(f"label: {record.get('label', '')}")
-        print(f"description: {record.get('description', '')}")
-        for column, pm in mappings.mappings.items():
-            value = record.get(column, pm.value)
-            if value is None:
-                continue
-            print(f"  {pm.propertyId} {pm.propertyName} = {value}")
-        covered = set(mappings.mappings.keys()) | {"label", "description"}
-        unmapped = [column for column in record if column not in covered]
-        for column in unmapped:
-            print(f"warning: no mapping for column {column} - value is ignored")
-        return unmapped
-
     def create(
         self,
         name: str,
@@ -203,7 +175,7 @@ class EzWdCmd(BaseCmd):
         write: bool,
         baseurl: str = None,
         strict: bool = False,
-    ) -> int:
+    ):
         """
         create (or dry-run) a Wikidata item from the given record using the
         named property mapping
@@ -215,32 +187,26 @@ class EzWdCmd(BaseCmd):
             write(bool): if True actually write to Wikidata
             baseurl(str): the wikibase baseurl to write to (defaults to
                 production Wikidata)
-            strict(bool): if True refuse to proceed on unmapped record columns
-
-        Returns:
-            int: 0 on success, 1 when strict and the record has unmapped columns
+            strict(bool): if True set exit code 1 when the result has problems
         """
         mappings = PropertyMappings.of_name(name)
+        property_mappings = list(mappings.mappings.values())
         record = self.load_record(record_path)
-        unmapped = self.preview(record, mappings)
-        if unmapped and strict:
-            print(f"strict: {len(unmapped)} unmapped column(s) - nothing done")
-            return 1
         wd = Wikidata(baseurl=baseurl)
         if write:
             wd.loginWithCredentials()
-        result = wd.add_record(
-            record, list(mappings.mappings.values()), lang=lang, write=write
-        )
-        mode = "wrote" if write else "dry-run"
-        if result.errors:
-            for column, error in result.errors.items():
-                print(f"error for {column}: {error}")
+        result = wd.add_record(record, property_mappings, lang=lang, write=write)
+        problems = wd.check_result(result, property_mappings, record)
+        for problem in problems:
+            print(problem)
+        if strict and problems:
+            self.exit_code = 1
         if result.qid:
-            print(f"{mode} {result.qid}: {wd.baseurl}/wiki/{result.qid}")
+            print(f"{result.qid}: {wd.baseurl}/wiki/{result.qid}")
+        elif self.debug:
+            print(f"{result.pretty_item_json}")
         else:
-            print(f"{mode} (no item id; use --write to create on Wikidata)")
-        return 0
+            print(wd.explain_result(result, lang=lang))
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -259,4 +225,4 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

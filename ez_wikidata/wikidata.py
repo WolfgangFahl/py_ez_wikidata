@@ -531,6 +531,70 @@ class Wikidata:
         result = WikidataResult(item=item, errors=errors, debug=self.debug)
         return result
 
+    def explain_result(self, result: WikidataResult, lang: str = "en") -> str:
+        """
+        explain the given result in human readable form
+
+        Args:
+            result(WikidataResult): the result to explain
+            lang(str): the language to use for label and description
+
+        Returns:
+            str: one line for the label, the description and each claim
+        """
+        lines = []
+        item = result.item
+        if item is not None:
+            label = item.labels.get(lang)
+            description = item.descriptions.get(lang)
+            lines.append(f"label: {label.value if label else ''}")
+            lines.append(f"description: {description.value if description else ''}")
+            wpm = WikidataPropertyManager.get_instance()
+            for claim in item.claims:
+                mainsnak = claim.mainsnak
+                pid = mainsnak.property_number
+                wd_property = wpm.get_property_by_id(pid)
+                property_name = wd_property.plabel if wd_property else "?"
+                value = mainsnak.datavalue.get("value")
+                if isinstance(value, dict):
+                    value = value.get("id", value)
+                lines.append(f"  {pid} {property_name}: {value}")
+        explanation = "\n".join(lines)
+        return explanation
+
+    def check_result(
+        self,
+        result: WikidataResult,
+        property_mappings: List["PropertyMapping"],
+        record: dict,
+    ) -> List[str]:
+        """
+        check the given result against the record and the mappings
+
+        Args:
+            result(WikidataResult): the result to check
+            property_mappings(list): the mappings that were applied
+            record(dict): the record that was mapped
+
+        Returns:
+            list: one problem message per mapped record value without a claim
+            and per error of the result
+        """
+        problems = []
+        claimed_pids = set()
+        if result.item is not None:
+            for claim in result.item.claims:
+                claimed_pids.add(claim.mainsnak.property_number)
+        for pm in property_mappings:
+            if pm.is_qualifier() or pm.is_item_itself():
+                continue
+            value = record.get(pm.column, pm.value)
+            if value is not None and pm.propertyId not in claimed_pids:
+                problems.append(f"no claim for {pm.column} ({pm.propertyId})")
+        for column, error in result.errors.items():
+            problems.append(f"error for {column}: {error}")
+        return problems
+
     def _get_statement_for_property(
         self,
         record: dict,

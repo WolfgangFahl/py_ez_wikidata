@@ -148,7 +148,7 @@ class Wikidata:
                 f"{Version.name}/{Version.version} (https://www.wikidata.org/wiki/User:{self.user})"
             )
             wbi_config["MEDIAWIKI_API_URL"] = self.apiurl
-            Wikidata.mount_retry(wbi_helpers.helpers_session)
+            Wikidata.mount_retry(wbi_helpers.default_session)
             self._wbi = WikibaseIntegrator(login=self.login)
         return self._wbi
 

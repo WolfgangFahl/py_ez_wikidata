@@ -47,7 +47,7 @@ class TestWikidata(BaseTest):
         must retry on HTTP 429 and honour Retry-After
         """
         _wbi = self.wd.wbi
-        adapter = wbi_helpers.helpers_session.get_adapter(self.wd.apiurl)
+        adapter = wbi_helpers.default_session.get_adapter(self.wd.apiurl)
         retry = adapter.max_retries
         self.assertIn(429, retry.status_forcelist or ())
         self.assertTrue(retry.respect_retry_after_header)

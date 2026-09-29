@@ -39,8 +39,8 @@ class TestWikidataProperties(BaseTest):
         test query
         """
         sparql_query = self.wpm.get_query_for_langs()
-        debug=self.debug
-        #debug=True
+        debug = self.debug
+        # debug=True
         if debug:
             print(sparql_query)
         expected = """SELECT

@@ -19,6 +19,7 @@ class TestEzWdCmd(BaseTest):
     """
     test the ezwd command line interface
     """
+
     def setUp(self, debug=True, profile=True):
         BaseTest.setUp(self, debug=debug, profile=profile)
 

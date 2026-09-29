@@ -4,9 +4,9 @@ Created on 2024-03-02
 @author: wf
 """
 
+import logging
 import os
 import re
-import logging
 from dataclasses import field
 from enum import Enum, auto
 from pathlib import Path
@@ -142,8 +142,9 @@ class Variable:
         Returns:
             str: a valid variable name
         """
-        var_name= re.sub(r"\W|^(?=\d)", "_", varStr)
+        var_name = re.sub(r"\W|^(?=\d)", "_", varStr)
         return var_name
+
 
 @lod_storable
 class WikidataProperty:
@@ -157,7 +158,7 @@ class WikidataProperty:
     plabel: str  # the label of the property
     description: str  # Description of the property
     type_name: str  # the type name
-    formatterURI: Optional[str] = None # P1921 formatter URI for RDF resource
+    formatterURI: Optional[str] = None  # P1921 formatter URI for RDF resource
     reverse: bool = False  # Indicates if the property is used in reverse direction
     # Variables initialized in __post_init__
     # varname: str = field(init=False)
@@ -273,24 +274,24 @@ class WikidataPropertyManager:
         """
         prepare storing by adding id and pid and avoiding duplicates
         """
-        final_lod=[]
-        seen_ids=set()
+        final_lod = []
+        seen_ids = set()
         for record in self.lod:
             pid = record["pid"]
             lang = record["lang"]
             pid = pid.replace("http://www.wikidata.org/entity/", "")
             record["pid"] = pid
-            record_id= f"{pid}-{lang}"
+            record_id = f"{pid}-{lang}"
             record["id"] = record_id
             if record_id not in seen_ids:
                 seen_ids.add(record_id)
                 final_lod.append(record)
             else:
-                formatterURI=record.get("formatterURI")
-                msg=f"ignoring duplicate formatterURI {formatterURI} for {record_id}"
+                formatterURI = record.get("formatterURI")
+                msg = f"ignoring duplicate formatterURI {formatterURI} for {record_id}"
                 logging.warning(msg)
 
-        self.lod=final_lod
+        self.lod = final_lod
 
     def load(self):
         """
@@ -663,6 +664,7 @@ class PropertyMappings:
     """
     A collection of Wikidata property mappings, with metadata.
     """
+
     name: str
     mappings: Dict[str, PropertyMapping] = field(default_factory=dict)
     description: Optional[str] = None

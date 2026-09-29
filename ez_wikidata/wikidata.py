@@ -20,7 +20,10 @@ import dateutil.parser
 from lodstorage.prefixes import Prefixes
 from lodstorage.query import Endpoint
 from lodstorage.sparql import SPARQL
-from wikibaseintegrator import WikibaseIntegrator, wbi_login
+from requests import Session
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from wikibaseintegrator import WikibaseIntegrator, wbi_helpers, wbi_login
 from wikibaseintegrator.datatypes import (
     URL,
     BaseDataType,
@@ -145,8 +148,34 @@ class Wikidata:
                 f"{Version.name}/{Version.version} (https://www.wikidata.org/wiki/User:{self.user})"
             )
             wbi_config["MEDIAWIKI_API_URL"] = self.apiurl
+            Wikidata.mount_retry(wbi_helpers.helpers_session)
             self._wbi = WikibaseIntegrator(login=self.login)
         return self._wbi
+
+    @staticmethod
+    def mount_retry(session: Session) -> Session:
+        """
+        mount an urllib3 Retry on the given session honouring Retry-After
+        on 429 / 5xx responses - WikibaseIntegrator reads via POST
+
+        Args:
+            session: the requests session to configure
+
+        Returns:
+            Session: the configured session
+        """
+        retry = Retry(
+            total=8,
+            backoff_factor=2.0,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=frozenset(["GET", "POST"]),
+            respect_retry_after_header=True,
+            raise_on_status=False,
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        return session
 
     @wbi.setter
     def wbi(self, wbi: typing.Union[WikibaseIntegrator, None]):
@@ -315,7 +344,9 @@ class Wikidata:
         item = self.wbi.item.get(item_id)
         lang = "en"
         if isinstance(property_mappings, dict):
-            property_mappings = PropertyMappings.from_dict(property_mappings)  # @UndefinedVariable
+            property_mappings = PropertyMappings.from_dict(
+                property_mappings
+            )  # @UndefinedVariable
         record = dict()
         if include_label and item.labels.get(lang) is not None:
             record["label"] = item.labels.get(lang).value
@@ -818,7 +849,9 @@ class Wikidata:
             label = label[: limit - len(postfix)] + postfix
         return label
 
-    def get_datatype_of_property(self, property_id: Union[str, int]) -> Union[str, None]:
+    def get_datatype_of_property(
+        self, property_id: Union[str, int]
+    ) -> Union[str, None]:
         """
         Get the datatype of the given property
         Args:

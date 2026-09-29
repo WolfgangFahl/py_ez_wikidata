@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from lodstorage.lod import LOD
+from wikibaseintegrator import wbi_helpers
 from wikibaseintegrator.datatypes import (
     URL,
     EntitySchema,
@@ -39,6 +40,18 @@ class TestWikidata(BaseTest):
             endpointConf=self.getWikidataEndpoint(),
         )
         self._test_wd = None
+
+    def test_wbi_session_retries_on_429(self):
+        """
+        the session used by WikibaseIntegrator for MediaWiki API calls
+        must retry on HTTP 429 and honour Retry-After
+        """
+        _wbi = self.wd.wbi
+        adapter = wbi_helpers.helpers_session.get_adapter(self.wd.apiurl)
+        retry = adapter.max_retries
+        self.assertIn(429, retry.status_forcelist or ())
+        self.assertTrue(retry.respect_retry_after_header)
+        self.assertIn("POST", retry.allowed_methods or ())
 
     @property
     def test_wikidata(self) -> Wikidata:

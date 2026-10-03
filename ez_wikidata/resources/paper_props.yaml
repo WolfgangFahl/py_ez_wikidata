@@ -1,0 +1,62 @@
+name: paper_props
+mappings:
+  instanceof:
+    column: instanceof
+    propertyName: instance of
+    propertyId: P31
+    propertyType: itemid
+    value: Q13442814
+  title:
+    column: title
+    propertyName: title
+    propertyId: P1476
+    propertyType: text
+  author:
+    column: author
+    propertyName: author
+    propertyId: P50
+    propertyType: itemid
+  series_ordinal:
+    column: series_ordinal
+    propertyName: series ordinal
+    propertyId: P1545
+    propertyType: string
+    qualifierOf: author
+  language:
+    column: language
+    propertyName: language of work or name
+    propertyId: P407
+    propertyType: itemid
+  publication_date:
+    column: publication_date
+    propertyName: publication date
+    propertyId: P577
+    propertyType: date
+  published_in:
+    column: published_in
+    propertyName: published in
+    propertyId: P1433
+    propertyType: itemid
+  pages:
+    column: pages
+    propertyName: page(s)
+    propertyId: P304
+    propertyType: string
+  doi:
+    column: doi
+    propertyName: DOI
+    propertyId: P356
+    propertyType: extid
+  dblp:
+    column: dblp
+    propertyName: DBLP publication ID
+    propertyId: P8978
+    propertyType: extid
+  full_text_url:
+    column: full_text_url
+    propertyName: work available at URL
+    propertyId: P953
+    propertyType: url
+description: Paper property mappings (Wikidata scholarly article); columns match issue
+  py_ez_wikidata#14
+url: https://media.bitplan.com/index.php/Concept:Paper

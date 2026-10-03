@@ -98,7 +98,7 @@ class TestPropertyMapping(BaseTest):
         propertyName - a mismatched pair would silently write a wrong claim
         e.g. researchGate with P6178 (Dimensions author ID) instead of P2038
         """
-        for name in ["scholar", "extension"]:
+        for name in ["scholar", "extension", "paper"]:
             property_mappings = PropertyMappings.of_name(name)
             for column, mapping in property_mappings.mappings.items():
                 if mapping.propertyId is None or mapping.propertyName is None:
@@ -151,3 +151,30 @@ class TestPropertyMapping(BaseTest):
         self.assertEqual(
             WdDatatype.entity_schema, scholar.mappings["shacl"].property_type_enum
         )
+
+    def test_paper_mapping(self):
+        """
+        test loading the bundled Paper PropertyMappings (resources/paper_props.yaml)
+        used to create a Wikidata entry for a scholarly article - see issue #14
+        """
+        paper = PropertyMappings.of_name("paper")
+        self.assertEqual("paper_props", paper.name)
+        # instance of scholarly article is fixed
+        self.assertEqual("P31", paper.mappings["instanceof"].propertyId)
+        self.assertEqual("Q13442814", paper.mappings["instanceof"].value)
+        expected = {
+            "title": "P1476",
+            "author": "P50",
+            "series_ordinal": "P1545",
+            "language": "P407",
+            "publication_date": "P577",
+            "published_in": "P1433",
+            "pages": "P304",
+            "doi": "P356",
+            "dblp": "P8978",
+            "full_text_url": "P953",
+        }
+        for column, pid in expected.items():
+            self.assertEqual(pid, paper.mappings[column].propertyId)
+        # the series ordinal qualifies the author statement
+        self.assertEqual("author", paper.mappings["series_ordinal"].qualifierOf)

@@ -50,7 +50,6 @@ from ez_wikidata.wdproperty import (
 )
 
 
-@dataclass
 class TimeoutHTTPAdapter(HTTPAdapter):
     """
     HTTPAdapter with a default timeout for requests that do not set one
@@ -76,6 +75,7 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         return response
 
 
+@dataclass
 class WikidataResult:
     """
     a class for handling a wikidata result

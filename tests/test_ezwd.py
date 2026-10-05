@@ -112,6 +112,71 @@ class TestEzWdCmd(BaseTest):
         ]:
             self.assertIn(token, out)
 
+    def test_proceedings_and_event_dry_run(self):
+        """
+        test that dry-runs of the proceedings and event mappings show the
+        statements of Q141623730 (Vol-4280) and Q141623731 - see issue #17
+        """
+        test_params = [
+            (
+                "proceedings",
+                {
+                    "label": "Proceedings of the CAiSE 2026 Research Projects Exhibition (CAiSE-RPE 2026)",
+                    "description": "Proceedings of CAiSE-RPE 2026 workshop",
+                    "volume": "4280",
+                    "short name": "CAiSE-RPE 2026",
+                    "pubDate": "2026-10-02",
+                    "title": "Proceedings of the CAiSE 2026 Research Projects Exhibition (CAiSE-RPE 2026)",
+                    "ceurwsUrl": "https://ceur-ws.org/Vol-4280/",
+                    "language of work or name": "Q1860",
+                    "fullWorkUrl": "https://ceur-ws.org/Vol-4280/",
+                    "urn": "urn:nbn:de:0074-4280-x",
+                },
+                [
+                    "Q1143604",
+                    "Q27230297",
+                    "+2026-10-02T00:00:00Z",
+                    "P973",
+                    "P953",
+                    "urn:nbn:de:0074-4280-x",
+                ],
+            ),
+            (
+                "event",
+                {
+                    "label": "CAiSE 2026 Research Projects Exhibition (CAiSE-RPE 2026)",
+                    "description": "academic workshop",
+                    "instanceof": "Q40444998",
+                    "short name": "CAiSE-RPE 2026",
+                    "title": "CAiSE 2026 Research Projects Exhibition (CAiSE-RPE 2026)",
+                    "start time": "2026-06-08",
+                    "end time": "2026-06-12",
+                    "locationWikidataId": "Q2028",
+                    "countryWikidataId": "Q38",
+                },
+                [
+                    "Q40444998",
+                    "+2026-06-08T00:00:00Z",
+                    "+2026-06-12T00:00:00Z",
+                    "Q2028",
+                    "Q38",
+                ],
+            ),
+        ]
+        for mapping_name, record, tokens in test_params:
+            with self.subTest(mapping=mapping_name):
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    record_path = os.path.join(tmp_dir, f"{mapping_name}.yaml")
+                    with open(record_path, "w") as record_file:
+                        yaml.safe_dump(record, record_file)
+                    out = self.run_cmd(
+                        ["--mapping", mapping_name, "--record", record_path, "--strict"]
+                    )
+                if self.debug:
+                    print(out)
+                for token in tokens:
+                    self.assertIn(token, out)
+
     def test_construct(self):
         """
         test that the command and its parser construct (entry point is wired)

@@ -98,7 +98,7 @@ class TestPropertyMapping(BaseTest):
         propertyName - a mismatched pair would silently write a wrong claim
         e.g. researchGate with P6178 (Dimensions author ID) instead of P2038
         """
-        for name in ["scholar", "extension", "paper"]:
+        for name in ["scholar", "extension", "paper", "proceedings", "event"]:
             property_mappings = PropertyMappings.of_name(name)
             for column, mapping in property_mappings.mappings.items():
                 if mapping.propertyId is None or mapping.propertyName is None:
@@ -178,3 +178,47 @@ class TestPropertyMapping(BaseTest):
             self.assertEqual(pid, paper.mappings[column].propertyId)
         # the series ordinal qualifies the author statement
         self.assertEqual("author", paper.mappings["series_ordinal"].qualifierOf)
+
+    def test_proceedings_and_event_mapping(self):
+        """
+        test loading the bundled proceedings and event PropertyMappings used
+        for CEUR-WS volumes by pyCEURmake wikidatasync - see issue #17
+        """
+        proceedings = PropertyMappings.of_name("proceedings")
+        self.assertEqual("proceedings_props", proceedings.name)
+        self.assertEqual("Q1143604", proceedings.mappings["instanceof"].value)
+        self.assertEqual("Q27230297", proceedings.mappings["part of the series"].value)
+        expected = {
+            "volume": ("P478", "part of the series"),
+            "short name": ("P1813", None),
+            "pubDate": ("P577", None),
+            "title": ("P1476", None),
+            "ceurwsUrl": ("P973", None),
+            "language of work or name": ("P407", "ceurwsUrl"),
+            "fullWorkUrl": ("P953", None),
+            "urn": ("P4109", None),
+        }
+        for column, (pid, qualifier_of) in expected.items():
+            mapping = proceedings.mappings[column]
+            self.assertEqual(pid, mapping.propertyId)
+            self.assertEqual(qualifier_of, mapping.qualifierOf)
+        event = PropertyMappings.of_name("event")
+        self.assertEqual("event_props", event.name)
+        # the class of the event comes from the record
+        self.assertIsNone(event.mappings["instanceof"].value)
+        expected = {
+            "short name": "P1813",
+            "title": "P1476",
+            "describedAt": "P973",
+            "language of work or name": "P407",
+            "dblpEventId": "P10692",
+            "start time": "P580",
+            "end time": "P582",
+            "locationWikidataId": "P276",
+            "countryWikidataId": "P17",
+        }
+        for column, pid in expected.items():
+            self.assertEqual(pid, event.mappings[column].propertyId)
+        self.assertEqual(
+            "describedAt", event.mappings["language of work or name"].qualifierOf
+        )

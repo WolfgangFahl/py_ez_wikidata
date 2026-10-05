@@ -1,0 +1,58 @@
+name: event_props
+mappings:
+  instanceof:
+    column: instanceof
+    propertyName: instance of
+    propertyId: P31
+    propertyType: itemid
+  short name:
+    column: short name
+    propertyName: short name
+    propertyId: P1813
+    propertyType: text
+  title:
+    column: title
+    propertyName: title
+    propertyId: P1476
+    propertyType: text
+  describedAt:
+    column: describedAt
+    propertyName: described at URL
+    propertyId: P973
+    propertyType: url
+  language of work or name:
+    column: language of work or name
+    propertyName: language of work or name
+    propertyId: P407
+    propertyType: itemid
+    qualifierOf: describedAt
+    value: Q1860
+  dblpEventId:
+    column: dblpEventId
+    propertyName: DBLP event ID
+    propertyId: P10692
+    propertyType: extid
+  start time:
+    column: start time
+    propertyName: start time
+    propertyId: P580
+    propertyType: date
+  end time:
+    column: end time
+    propertyName: end time
+    propertyId: P582
+    propertyType: date
+  locationWikidataId:
+    column: locationWikidataId
+    propertyName: location
+    propertyId: P276
+    propertyType: itemid
+  countryWikidataId:
+    column: countryWikidataId
+    propertyName: country
+    propertyId: P17
+    propertyType: itemid
+description: academic event property mappings for the events of CEUR-WS volumes; the
+  class (e.g. Q40444998 academic workshop) comes from the instanceof column of the
+  record; columns match the records of pyCEURmake wikidatasync
+url: https://ceur-ws.org

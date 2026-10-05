@@ -51,6 +51,31 @@ from ez_wikidata.wdproperty import (
 
 
 @dataclass
+class TimeoutHTTPAdapter(HTTPAdapter):
+    """
+    HTTPAdapter with a default timeout for requests that do not set one
+    """
+
+    def __init__(self, timeout: tuple = (10, 60), **kwargs):
+        """
+        constructor
+
+        Args:
+            timeout: the default (connect, read) timeout in seconds
+        """
+        self.timeout = timeout
+        super().__init__(**kwargs)
+
+    def send(self, request, **kwargs):
+        """
+        send the request with the default timeout if none is given
+        """
+        if kwargs.get("timeout") is None:
+            kwargs["timeout"] = self.timeout
+        response = super().send(request, **kwargs)
+        return response
+
+
 class WikidataResult:
     """
     a class for handling a wikidata result
@@ -153,26 +178,30 @@ class Wikidata:
         return self._wbi
 
     @staticmethod
-    def mount_retry(session: Session) -> Session:
+    def mount_retry(session: Session, timeout: tuple = (10, 60)) -> Session:
         """
         mount an urllib3 Retry on the given session honouring Retry-After
-        on 429 / 5xx responses - WikibaseIntegrator reads via POST
+        on 429 / 5xx responses - WikibaseIntegrator reads via POST;
+        every request gets a default timeout so that a server that does
+        not answer can not block the caller indefinitely - see issue #16
 
         Args:
             session: the requests session to configure
+            timeout: the default (connect, read) timeout in seconds
 
         Returns:
             Session: the configured session
         """
         retry = Retry(
             total=8,
+            read=2,
             backoff_factor=2.0,
             status_forcelist=(429, 500, 502, 503, 504),
             allowed_methods=frozenset(["GET", "POST"]),
             respect_retry_after_header=True,
             raise_on_status=False,
         )
-        adapter = HTTPAdapter(max_retries=retry)
+        adapter = TimeoutHTTPAdapter(timeout=timeout, max_retries=retry)
         session.mount("https://", adapter)
         session.mount("http://", adapter)
         return session

@@ -1,8 +1,11 @@
 import json
+import socket
+import time
 import unittest
 import uuid
 from datetime import datetime
 
+import requests
 from lodstorage.lod import LOD
 from wikibaseintegrator import wbi_helpers
 from wikibaseintegrator.datatypes import (
@@ -52,6 +55,32 @@ class TestWikidata(BaseTest):
         self.assertIn(429, retry.status_forcelist or ())
         self.assertTrue(retry.respect_retry_after_header)
         self.assertIn("POST", retry.allowed_methods or ())
+
+    def test_wbi_session_times_out(self):
+        """
+        a request to a server that accepts the connection and never answers
+        must fail within a bounded time - see issue #16
+        """
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(("127.0.0.1", 0))
+        server.listen(5)
+        port = server.getsockname()[1]
+        session = Wikidata.mount_retry(requests.Session(), timeout=(1, 1))
+        start = time.time()
+        error = None
+        try:
+            session.post(f"http://127.0.0.1:{port}/w/api.php", data={"action": "query"})
+        except requests.exceptions.RequestException as ex:
+            error = ex
+        finally:
+            server.close()
+        elapsed = time.time() - start
+        self.assertIsNotNone(error)
+        self.assertLess(elapsed, 30)
+        # the wbi session carries the default timeout
+        _wbi = self.wd.wbi
+        adapter = wbi_helpers.default_session.get_adapter(self.wd.apiurl)
+        self.assertEqual((10, 60), adapter.timeout)
 
     @property
     def test_wikidata(self) -> Wikidata:

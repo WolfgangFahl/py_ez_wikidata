@@ -178,6 +178,9 @@ class TestPropertyMapping(BaseTest):
             self.assertEqual(pid, paper.mappings[column].propertyId)
         # the series ordinal qualifies the author statement
         self.assertEqual("author", paper.mappings["series_ordinal"].qualifierOf)
+        # the series ordinal is the 1-based list index of the author, not a column - see issue #15
+        self.assertIsNone(paper.mappings["series_ordinal"].column)
+        self.assertEqual(1, paper.mappings["series_ordinal"].listIndexBase)
 
     def test_proceedings_and_event_mapping(self):
         """

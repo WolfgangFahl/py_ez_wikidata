@@ -84,7 +84,6 @@ class TestEzWdCmd(BaseTest):
             "description": "scholarly article published in 2025",
             "title": "GraphWiseLearn: Personalized Learning Through Semantified TEL, Leveraging QA-Enhanced LLM-Generated Content",
             "author": "Q110462723",
-            "series_ordinal": "1",
             "language": "Q1860",
             "publication_date": "2025-01-28",
             "pages": "74-83",
@@ -109,8 +108,72 @@ class TestEzWdCmd(BaseTest):
             "74-83",
             "10.1007/978-3-031-78955-7_8",
             "conf/esws/Fahl24",
+            "P1545 series ordinal: 1",
         ]:
             self.assertIn(token, out)
+
+    def write_record(self, tmp_dir: str, name: str, record: dict) -> str:
+        """
+        write the given record as YAML file into the given directory
+        """
+        record_path = os.path.join(tmp_dir, f"{name}.yaml")
+        with open(record_path, "w") as record_file:
+            yaml.safe_dump(record, record_file)
+        return record_path
+
+    def test_paper_authors_dry_run(self):
+        """
+        test that the authors of a paper get their 1-based list index as
+        series ordinal - Q111500468 Persistent Identification for Conferences,
+        see issue #15
+        """
+        authors = [
+            "Q115164606",
+            "Q55685947",
+            "Q56448921",
+            "Q110462723",
+            "Q57169981",
+            "Q30276490",
+        ]
+        record = {
+            "label": "Persistent Identification for Conferences",
+            "description": "scholarly article",
+            "title": "Persistent Identification for Conferences",
+            "author": authors,
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            record_path = self.write_record(tmp_dir, "q111500468", record)
+            out = self.run_cmd(
+                ["--mapping", "paper", "--record", record_path, "--strict"]
+            )
+        if self.debug:
+            print(out)
+        expected = []
+        for index, author in enumerate(authors):
+            expected.append(f"  P50 author: {author}")
+            expected.append(f"    P1545 series ordinal: {index + 1}")
+        lines = [line for line in out.splitlines() if "P50" in line or "P1545" in line]
+        self.assertEqual(expected, lines)
+
+    def test_strict_unmapped_column(self):
+        """
+        test that --strict refuses a record column without mapping, e.g.
+        ordinals supplied for authors - see issues #13 and #15
+        """
+        record = {
+            "label": "Persistent Identification for Conferences",
+            "author": ["Q115164606", "Q55685947"],
+            "series_ordinal": ["1", "1"],
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            record_path = self.write_record(tmp_dir, "unmapped", record)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                exit_code = main(
+                    ["--mapping", "paper", "--record", record_path, "--strict"]
+                )
+        self.assertEqual(1, exit_code)
+        self.assertIn("no mapping for column series_ordinal", buf.getvalue())
 
     def test_proceedings_and_event_dry_run(self):
         """

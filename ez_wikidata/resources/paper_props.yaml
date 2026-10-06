@@ -17,11 +17,12 @@ mappings:
     propertyId: P50
     propertyType: itemid
   series_ordinal:
-    column: series_ordinal
+    column: null
     propertyName: series ordinal
     propertyId: P1545
     propertyType: string
     qualifierOf: author
+    listIndexBase: 1
   language:
     column: language
     propertyName: language of work or name

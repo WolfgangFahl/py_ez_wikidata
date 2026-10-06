@@ -480,6 +480,9 @@ class PropertyMapping:
         valueLookupType (Optional[Any]): The type (instance of/P31) of the property value for lookup if the value is not already a QID.
         value (Optional[Any]): The default value to set for the property.
         varname (Optional[str]): An optional variable name for internal use.
+        listIndexBase (Optional[int]): for a qualifier mapping without column: the qualifier value is
+            the index of the qualified value in its list counted from this base, e.g. 1 for
+            series ordinal (P1545), which uses one-based numbering - see issue #15
         property_type_enum (WdDatatype): The enum representation of the property type, initialized based on propertyType.
 
     The __post_init__ method ensures the propertyType is correctly interpreted and stored as both a string and an enum.
@@ -495,6 +498,7 @@ class PropertyMapping:
     )
     value: Any = None  # set this value for the property
     varname: str = None
+    listIndexBase: Optional[int] = None
     # property_type_enum: WdDatatype=field(init=False)
 
     def __post_init__(self):
@@ -572,6 +576,7 @@ class PropertyMapping:
             valueLookupType=record.get("valueLookupType", None),
             value=record.get("value", None),
             varname=record.get("varname", None),
+            listIndexBase=record.get("listIndexBase", None),
         )
         return mapping
 

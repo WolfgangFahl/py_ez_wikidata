@@ -395,6 +395,7 @@ class Wikidata:
             if isinstance(prop, PropertyMapping):
                 prop_label = prop.column
             values = []
+            sort_keys = []
             for statement in statements:
                 value = self._get_statement_value(statement)
                 if label_for_qids:
@@ -411,6 +412,11 @@ class Wikidata:
                     and prop.column in qualifier_lookup
                 ):
                     for qualifier_pm in qualifier_lookup[prop.column]:
+                        if qualifier_pm.listIndexBase is not None:
+                            sort_keys.append(
+                                self._get_list_index(statement, qualifier_pm)
+                            )
+                            continue
                         if qualifier_pm.propertyId in statement.qualifiers.qualifiers:
                             qualifier_statements = statement.qualifiers.get(
                                 qualifier_pm.propertyId
@@ -427,6 +433,14 @@ class Wikidata:
                             if len(qualifier_values) == 1
                             else qualifier_values
                         )
+            if sort_keys and len(sort_keys) == len(values):
+                # order the values by their list index qualifier - see issue #15
+                values = [
+                    value
+                    for _key, value in sorted(
+                        zip(sort_keys, values), key=lambda pair: pair[0]
+                    )
+                ]
             if len(values) == 1:
                 record[prop_label] = values[0]
             elif values == []:
@@ -434,6 +448,28 @@ class Wikidata:
             else:
                 record[prop_label] = values
         return record
+
+    def _get_list_index(
+        self, statement: Claim, qualifier_pm: "PropertyMapping"
+    ) -> float:
+        """
+        get the list index of the given statement from its list index qualifier
+
+        Args:
+            statement: the statement
+            qualifier_pm: the qualifier mapping with listIndexBase
+
+        Returns:
+            float: the index, infinity if the qualifier is missing or not a number
+        """
+        index = float("inf")
+        if qualifier_pm.propertyId in statement.qualifiers.qualifiers:
+            for qualifier in statement.qualifiers.get(qualifier_pm.propertyId):
+                try:
+                    index = int(self._get_statement_value(qualifier))
+                except (TypeError, ValueError):
+                    pass
+        return index
 
     def get_item_label(self, item_id: str, lang: str = None) -> typing.Union[str, None]:
         """
@@ -619,6 +655,14 @@ class Wikidata:
                 if isinstance(value, dict):
                     value = value.get("id", value)
                 lines.append(f"  {pid} {property_name}: {value}")
+                for qpid, qualifiers in claim.qualifiers.qualifiers.items():
+                    q_property = wpm.get_property_by_id(qpid)
+                    q_name = q_property.plabel if q_property else "?"
+                    for qualifier in qualifiers:
+                        q_value = qualifier.datavalue.get("value")
+                        if isinstance(q_value, dict):
+                            q_value = q_value.get("id", q_value)
+                        lines.append(f"    {qpid} {q_name}: {q_value}")
         explanation = "\n".join(lines)
         return explanation
 
@@ -637,8 +681,8 @@ class Wikidata:
             record(dict): the record that was mapped
 
         Returns:
-            list: one problem message per mapped record value without a claim
-            and per error of the result
+            list: one problem message per mapped record value without a claim,
+            per error of the result and per record column without mapping
         """
         problems = []
         claimed_pids = set()
@@ -653,6 +697,13 @@ class Wikidata:
                 problems.append(f"no claim for {pm.column} ({pm.propertyId})")
         for column, error in result.errors.items():
             problems.append(f"error for {column}: {error}")
+        covered = {pm.column for pm in property_mappings if pm.column} | {
+            "label",
+            "description",
+        }
+        for column in record:
+            if column not in covered:
+                problems.append(f"no mapping for column {column} - value is ignored")
         return problems
 
     def _get_statement_for_property(
@@ -682,7 +733,7 @@ class Wikidata:
         value = self.get_prop_value(record, prop_mapping, lang)
         values = value if isinstance(value, list) else [value]
         errors = dict()
-        for value in values:
+        for index, value in enumerate(values):
             statement = None
             try:
                 statement = self.convert_to_claim(value=value, pm=prop_mapping)
@@ -697,7 +748,7 @@ class Wikidata:
                 # add qualifier
                 if qualifier_mappings is not None:
                     qualifier_errors = self._add_qualifier_to_statement(
-                        record, statement, qualifier_mappings, lang
+                        record, statement, qualifier_mappings, lang, index
                     )
                     # merge error dicts to one dict
                     errors = {**errors, **qualifier_errors}
@@ -711,6 +762,7 @@ class Wikidata:
         statement: Claim,
         qualifier_mappings: List["PropertyMapping"],
         lang: str,
+        index: int = 0,
     ) -> dict:
         """
         add the qualifiers to the given statement
@@ -718,13 +770,19 @@ class Wikidata:
             record:
             statement: add qualifiers to this statement
             qualifier_mappings: list of PropertyMappings of the qualifiers
+            lang: language to use
+            index: the 0-based index of the statement value in its list - a qualifier
+                mapping with listIndexBase gets index + listIndexBase as value
 
         Returns:
             dict of occurred errors with the qualifier column as key. If no error occurs an empty dict is returned
         """
         errors = dict()
         for qualifier_pm in qualifier_mappings:
-            qualifier_value = self.get_prop_value(record, qualifier_pm, lang)
+            if qualifier_pm.listIndexBase is not None:
+                qualifier_value = str(index + qualifier_pm.listIndexBase)
+            else:
+                qualifier_value = self.get_prop_value(record, qualifier_pm, lang)
             if qualifier_value is None:
                 continue
             else:

@@ -295,6 +295,24 @@ class TestWikidata(BaseTest):
         )
         self.assertDictEqual(expected, actual)
 
+    def test_get_record_list_index_order(self):
+        """
+        test that get_record returns the authors of Q111500468 ordered by their
+        series ordinal, not in the statement order of Wikidata - see issue #15
+        """
+        property_mappings = list(PropertyMappings.of_name("paper").mappings.values())
+        record = self.wd.get_record("Q111500468", property_mappings)
+        expected = [
+            "Q115164606",
+            "Q55685947",
+            "Q56448921",
+            "Q110462723",
+            "Q57169981",
+            "Q30276490",
+        ]
+        self.assertEqual(expected, record["author"])
+        self.assertNotIn(None, record)
+
     def test_get_record_label(self):
         """
         test get_record with property mapping to extract the label of item links

@@ -2,6 +2,7 @@ import json
 import socket
 import time
 import unittest
+import unittest.mock
 import uuid
 from datetime import datetime
 
@@ -294,6 +295,31 @@ class TestWikidata(BaseTest):
             "Q113543868", prop_ids, include_label=False, include_description=False
         )
         self.assertDictEqual(expected, actual)
+
+    def test_maxlag_only_on_writes(self):
+        """
+        a read is sent without maxlag, a write with the maxlag default of
+        WikibaseIntegrator - see issue #18
+        """
+        requests_data = []
+
+        def fake_call(method, mediawiki_api_url=None, session=None, **kwargs):
+            requests_data.append(kwargs.get("data", {}))
+            raise RuntimeError("no network in this test")
+
+        with unittest.mock.patch(
+            "wikibaseintegrator.wbi_helpers.mediawiki_api_call", fake_call
+        ):
+            with self.assertRaises(RuntimeError):
+                self.wd.get_item("Q64")
+            item = self.wd.wbi.item.new()
+            with self.assertRaises(RuntimeError):
+                item.write(allow_anonymous=True)
+        read_data, write_data = requests_data
+        self.assertEqual("wbgetentities", read_data["action"])
+        self.assertNotIn("maxlag", read_data)
+        self.assertEqual("wbeditentity", write_data["action"])
+        self.assertEqual(5, write_data["maxlag"])
 
     def test_get_record_list_index_order(self):
         """

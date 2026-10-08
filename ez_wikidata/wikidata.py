@@ -370,7 +370,7 @@ class Wikidata:
         Returns:
             dict with the property values
         """
-        item = self.wbi.item.get(item_id)
+        item = self.get_item(item_id)
         lang = "en"
         if isinstance(property_mappings, dict):
             property_mappings = PropertyMappings.from_dict(
@@ -471,6 +471,21 @@ class Wikidata:
                     pass
         return index
 
+    def get_item(self, item_id: str) -> ItemEntity:
+        """
+        read the given item without maxlag - maxlag is meant for edits, a read
+        must not wait for the replication lag of Wikidata - see issue #18;
+        writes keep the maxlag default of WikibaseIntegrator
+
+        Args:
+            item_id: the id of the item to read
+
+        Returns:
+            ItemEntity: the item
+        """
+        item = self.wbi.item.get(item_id, maxlag=0)
+        return item
+
     def get_item_label(self, item_id: str, lang: str = None) -> typing.Union[str, None]:
         """
         Get the label for the given item id
@@ -486,7 +501,7 @@ class Wikidata:
             lang = "en"
         label = None
         if item_id is not None:
-            linked_item = self.wbi.item.get(item_id)
+            linked_item = self.get_item(item_id)
             linked_item_label = linked_item.labels.get(lang)
             if linked_item_label is not None:
                 label = linked_item_label.value
@@ -804,7 +819,7 @@ class Wikidata:
         if item_id is None or isinstance(item_id, str) and item_id.strip() == "":
             item = self.wbi.item.new()
         else:
-            item = self.wbi.item.get(item_id)
+            item = self.get_item(item_id)
         return item
 
     def get_prop_value(

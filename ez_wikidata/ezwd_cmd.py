@@ -12,6 +12,7 @@ from typing import List, Optional
 
 import yaml
 from basemkit.base_cmd import BaseCmd
+from sem3.lod2rdf import RDFDumper
 
 from ez_wikidata.version import Version
 from ez_wikidata.wdproperty import PropertyMappings
@@ -78,6 +79,16 @@ class EzWdCmd(BaseCmd):
             help="actually write to Wikidata (default: dry-run, nothing is written)",
         )
         parser.add_argument(
+            "--example",
+            action="store_true",
+            help="run the worked example embedded in the mapping as dry-run",
+        )
+        parser.add_argument(
+            "--format",
+            choices=RDFDumper.get_output_formats(),
+            help="also print the built item as RDF in the given format",
+        )
+        parser.add_argument(
             "--strict",
             action="store_true",
             help="exit with code 1 when the result has problems",
@@ -111,6 +122,8 @@ class EzWdCmd(BaseCmd):
             self.search(args.search, args.lang, args.limit)
         elif args.mapping and args.list_mappings:
             self.list_mapping(args.mapping)
+        elif args.mapping and args.example:
+            self.example(args.mapping, args.lang, args.strict, args.format)
         elif args.mapping and args.record:
             baseurl = Wikidata.TEST_WD_URL if args.test else args.baseurl
             self.create(
@@ -120,6 +133,7 @@ class EzWdCmd(BaseCmd):
                 args.write,
                 baseurl,
                 args.strict,
+                args.format,
             )
         else:
             self.parser.print_help()
@@ -150,6 +164,32 @@ class EzWdCmd(BaseCmd):
         for column, pm in mappings.mappings.items():
             print(f"  {column}\t{pm.propertyId}\t{pm.propertyType}\t{pm.propertyName}")
 
+    def example(
+        self, name: str, lang: str, strict: bool = False, rdf_format: str = None
+    ):
+        """
+        print the worked example embedded in the named mapping and run it as
+        dry-run - see issue #19
+
+        Args:
+            name(str): the mapping name (e.g. paper)
+            lang(str): the language to use
+            strict(bool): if True set exit code 1 when the result has problems
+            rdf_format(str): if given also print the built item as RDF
+        """
+        mappings = PropertyMappings.of_name(name)
+        item_id, record = mappings.get_example()
+        if record is None:
+            print(f"{mappings.name}: no example embedded in {mappings.path}")
+            self.exit_code = 1
+        else:
+            print(f"# example of {mappings.name}: {Wikidata.WD_URL}/wiki/{item_id}")
+            print(yaml.safe_dump(record, sort_keys=False, allow_unicode=True), end="")
+            print("# dry-run:")
+            self.create_from_record(
+                mappings, record, lang, False, None, strict, rdf_format
+            )
+
     def load_record(self, record_path: str) -> dict:
         """
         load a record from a YAML or JSON file
@@ -175,10 +215,11 @@ class EzWdCmd(BaseCmd):
         write: bool,
         baseurl: str = None,
         strict: bool = False,
+        rdf_format: str = None,
     ):
         """
-        create (or dry-run) a Wikidata item from the given record using the
-        named property mapping
+        create (or dry-run) a Wikidata item from the given record file using
+        the named property mapping
 
         Args:
             name(str): the mapping name (e.g. scholar)
@@ -188,10 +229,38 @@ class EzWdCmd(BaseCmd):
             baseurl(str): the wikibase baseurl to write to (defaults to
                 production Wikidata)
             strict(bool): if True set exit code 1 when the result has problems
+            rdf_format(str): if given also print the built item as RDF
         """
         mappings = PropertyMappings.of_name(name)
-        property_mappings = list(mappings.mappings.values())
         record = self.load_record(record_path)
+        self.create_from_record(
+            mappings, record, lang, write, baseurl, strict, rdf_format
+        )
+
+    def create_from_record(
+        self,
+        mappings: PropertyMappings,
+        record: dict,
+        lang: str,
+        write: bool,
+        baseurl: str = None,
+        strict: bool = False,
+        rdf_format: str = None,
+    ):
+        """
+        create (or dry-run) a Wikidata item from the given record using the
+        given property mappings
+
+        Args:
+            mappings(PropertyMappings): the property mappings
+            record(dict): the record
+            lang(str): the language to use
+            write(bool): if True actually write to Wikidata
+            baseurl(str): the wikibase baseurl to write to
+            strict(bool): if True set exit code 1 when the result has problems
+            rdf_format(str): if given also print the built item as RDF
+        """
+        property_mappings = list(mappings.mappings.values())
         wd = Wikidata(baseurl=baseurl)
         if write:
             wd.loginWithCredentials()
@@ -207,6 +276,8 @@ class EzWdCmd(BaseCmd):
             print(f"{result.pretty_item_json}")
         else:
             print(wd.explain_result(result, lang=lang))
+        if rdf_format:
+            print(wd.as_rdf(result, rdf_format=rdf_format, lang=lang))
 
 
 def main(argv: Optional[List[str]] = None) -> int:

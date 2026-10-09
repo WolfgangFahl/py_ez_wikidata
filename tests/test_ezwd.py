@@ -155,6 +155,45 @@ class TestEzWdCmd(BaseTest):
         lines = [line for line in out.splitlines() if "P50" in line or "P1545" in line]
         self.assertEqual(expected, lines)
 
+    def test_example(self):
+        """
+        test that --example prints the embedded record of the paper mapping and
+        its dry run - see issue #19
+        """
+        out = self.run_cmd(["--mapping", "paper", "--example", "--strict"])
+        if self.debug:
+            print(out)
+        for token in [
+            "https://www.wikidata.org/wiki/Q141609355",
+            "doi: 10.1007/978-3-031-78955-7_8",
+            "# dry-run:",
+            "P50 author: Q110462723",
+            "P1545 series ordinal: 1",
+        ]:
+            self.assertIn(token, out)
+
+    def test_format_turtle(self):
+        """
+        test that --format turtle prints the built item in the Wikidata RDF
+        model with the author order as pq:P1545 - see issue #8
+        """
+        record = {
+            "label": "Persistent Identification for Conferences",
+            "title": "Persistent Identification for Conferences",
+            "author": ["Q115164606", "Q55685947", "Q56448921"],
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            record_path = self.write_record(tmp_dir, "q111500468", record)
+            out = self.run_cmd(
+                ["--mapping", "paper", "--record", record_path, "--format", "turtle"]
+            )
+        if self.debug:
+            print(out)
+        self.assertEqual(3, out.count("ps:P50 wd:Q"))
+        for ordinal in ["1", "2", "3"]:
+            self.assertIn(f'pq:P1545 "{ordinal}"', out)
+        self.assertIn("@prefix wdt:", out)
+
     def test_strict_unmapped_column(self):
         """
         test that --strict refuses a record column without mapping, e.g.

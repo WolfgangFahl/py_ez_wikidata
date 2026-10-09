@@ -10,13 +10,14 @@ import re
 from dataclasses import field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from basemkit.yamlable import lod_storable
 from lodstorage.prefixes import Prefixes
 from lodstorage.profiler import Profiler
 from lodstorage.sparql import SPARQL
 from lodstorage.sql import SQLDB
+from sem3.extractor import Extractor
 
 from ez_wikidata.version import Version
 
@@ -674,6 +675,23 @@ class PropertyMappings:
     mappings: Dict[str, PropertyMapping] = field(default_factory=dict)
     description: Optional[str] = None
     url: Optional[str] = None
+    path: Optional[str] = None
+
+    @classmethod
+    def resource_path(cls, name: str) -> str:
+        """
+        get the path of the bundled mapping resource of the given name
+
+        Args:
+            name(str): the use-case name (resource is <name>_props.yaml)
+
+        Returns:
+            str: the path of the resource file
+        """
+        path = os.path.join(
+            os.path.dirname(__file__), "resources", f"{name}_props.yaml"
+        )
+        return path
 
     @classmethod
     def of_name(cls, name: str) -> "PropertyMappings":
@@ -688,8 +706,30 @@ class PropertyMappings:
         Returns:
             PropertyMappings: the loaded mapping set
         """
-        path = os.path.join(
-            os.path.dirname(__file__), "resources", f"{name}_props.yaml"
-        )
+        path = cls.resource_path(name)
         property_mappings = cls.load_from_yaml_file(path)
+        property_mappings.path = path
         return property_mappings
+
+    def get_example(self) -> Tuple[Optional[str], Optional[dict]]:
+        """
+        get the worked example embedded in the header of the mapping file as
+        🌐🕸 annotation: a yaml block keyed by the id of the item that was
+        created with this mapping and holding its record - see issue #19
+
+        Returns:
+            Tuple[Optional[str], Optional[dict]]: the item id and the record,
+            (None, None) if the mapping has no example
+        """
+        item_id = None
+        record = None
+        if self.path is not None:
+            extractor = Extractor()
+            markups = extractor.extract_from_file(self.path)
+            lod = extractor.markups_to_lod(markups)
+            if lod:
+                record = dict(lod[0])
+                item_id = record.pop("name", None)
+                for key in ("isA", "source"):
+                    record.pop(key, None)
+        return item_id, record

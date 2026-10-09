@@ -1,3 +1,26 @@
+# WF 2026-10-05
+# Wikidata property mappings for CEUR-WS proceedings volumes for py_ez_wikidata
+# creates a proceedings item https://www.wikidata.org/wiki/Q1143604 in the CEUR Workshop Proceedings series https://www.wikidata.org/wiki/Q27230297 ;
+# columns match the records of the Wikidata sync of https://github.com/WolfgangFahl/pyCEURmake
+# (ceurws/wikidatasync.py); the link to the event (P4745) is a separate step there
+# see https://github.com/WolfgangFahl/py_ez_wikidata/issues/17 and https://github.com/WolfgangFahl/pyCEURmake/issues/112
+# tutorial: https://wiki.bitplan.com/index.php/Py_ez_wikidata/Tutorial/Examples#proceedings
+# example: https://www.wikidata.org/wiki/Q141623730 was created 2026-10-02 for https://ceur-ws.org/Vol-4280/ from this record:
+# ```yaml
+# 🌐🕸
+# Q141623730:
+#   isA: Proceedings
+#   label: Proceedings of the CAiSE 2026 Research Projects Exhibition (CAiSE-RPE 2026)
+#   description: Proceedings of CAiSE-RPE 2026 workshop
+#   volume: "4280"
+#   short name: CAiSE-RPE 2026
+#   pubDate: "2026-10-02"
+#   title: Proceedings of the CAiSE 2026 Research Projects Exhibition (CAiSE-RPE 2026)
+#   ceurwsUrl: https://ceur-ws.org/Vol-4280/
+#   language of work or name: Q1860
+#   fullWorkUrl: https://ceur-ws.org/Vol-4280/
+#   urn: urn:nbn:de:0074-4280-x
+# ```
 name: proceedings_props
 mappings:
   instanceof:

@@ -1,3 +1,26 @@
+# WF 2026-10-03
+# Wikidata property mappings for papers for py_ez_wikidata
+# creates a scholarly article https://www.wikidata.org/wiki/Q13442814 ; the authors are listed in their order, the series
+# ordinal of each author is its 1-based list index (listIndexBase); columns match
+# https://media.bitplan.com/index.php/Concept:Paper
+# used by ezwd per https://media.bitplan.com/index.php/ActionPage/CreatePaper
+# see https://github.com/WolfgangFahl/py_ez_wikidata/issues/14 and https://github.com/WolfgangFahl/py_ez_wikidata/issues/15
+# tutorial: https://wiki.bitplan.com/index.php/Py_ez_wikidata/Tutorial/Examples#paper
+# example: https://www.wikidata.org/wiki/Q141609355 was created 2026-09-30 from this record:
+# ```yaml
+# 🌐🕸
+# Q141609355:
+#   isA: Paper
+#   label: "GraphWiseLearn: Personalized Learning Through Semantified TEL, Leveraging QA-Enhanced LLM-Generated Content"
+#   description: scholarly article published in 2025
+#   title: "GraphWiseLearn: Personalized Learning Through Semantified TEL, Leveraging QA-Enhanced LLM-Generated Content"
+#   author: [Q110462723]
+#   language: Q1860
+#   publication_date: "2025-01-28"
+#   pages: 74-83
+#   doi: 10.1007/978-3-031-78955-7_8
+#   dblp: conf/esws/Fahl24
+# ```
 name: paper_props
 mappings:
   instanceof:

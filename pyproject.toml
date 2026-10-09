@@ -26,7 +26,10 @@ dependencies = [
 	# https://pypi.org/project/pylodstorage/
 	# >=0.19.5 includes the issue #165 fix that rate-limits the SPARQL query
 	# path (query/queryAsListOfDicts), avoiding HTTP 429 against Wikidata/QLever
-	"pylodstorage>=0.19.5"
+	"pylodstorage>=0.19.5",
+	# https://pypi.org/project/semantify3/
+	# 🌐🕸 annotations: the worked example embedded in each mapping file, rdflib for the RDF output
+	"semantify3>=0.1.0"
 ]
 
 requires-python = ">=3.10"

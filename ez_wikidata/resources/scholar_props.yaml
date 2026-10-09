@@ -1,3 +1,23 @@
+# WF 2026-06-26
+# Wikidata property mappings for scholars for py_ez_wikidata
+# creates a human https://www.wikidata.org/wiki/Q5 with scholarly identifiers; columns match
+# https://media.bitplan.com/index.php/Template:Scholar
+# used by ezwd per https://media.bitplan.com/index.php/ActionPage/CreateWikidataItem
+# and read back by scholarsync of https://github.com/WolfgangFahl/pySMWSync
+# see https://github.com/WolfgangFahl/py_ez_wikidata/issues/10 and https://github.com/WolfgangFahl/py_ez_wikidata/issues/12
+# tutorial: https://wiki.bitplan.com/index.php/Py_ez_wikidata/Tutorial/Examples#scholar
+# example: https://www.wikidata.org/wiki/Q140424194 was created 2026-07-04 from this record:
+# ```yaml
+# 🌐🕸
+# Q140424194:
+#   isA: Scholar
+#   label: Robert David
+#   description: knowledge graph researcher
+#   instanceof: Q5
+#   orcid: "0000-0002-3244-5341"
+#   dblp: "173/3493-1"
+#   linkedInId: "robert-david-39b47692"
+# ```
 name: scholar_props
 mappings:
   instanceof:

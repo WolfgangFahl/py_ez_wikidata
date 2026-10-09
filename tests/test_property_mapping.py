@@ -10,6 +10,7 @@ from ez_wikidata.wdproperty import (
     WdDatatype,
     WikidataPropertyManager,
 )
+from ez_wikidata.wikidata import Wikidata
 from tests.basetest import BaseTest
 
 
@@ -181,6 +182,25 @@ class TestPropertyMapping(BaseTest):
         # the series ordinal is the 1-based list index of the author, not a column - see issue #15
         self.assertIsNone(paper.mappings["series_ordinal"].column)
         self.assertEqual(1, paper.mappings["series_ordinal"].listIndexBase)
+
+    def test_embedded_examples(self):
+        """
+        test that every bundled mapping embeds the record of the item that was
+        created with it as 🌐🕸 annotation and that the record passes the dry
+        run without problems - see issue #19
+        """
+        wd = Wikidata()
+        for name in ["scholar", "extension", "paper", "proceedings", "event"]:
+            with self.subTest(mapping=name):
+                mappings = PropertyMappings.of_name(name)
+                item_id, record = mappings.get_example()
+                self.assertIsNotNone(item_id, f"{name}: no embedded example")
+                self.assertTrue(wd.is_wikidata_item_id(item_id), item_id)
+                self.assertIn("label", record)
+                property_mappings = list(mappings.mappings.values())
+                result = wd.add_record(record, property_mappings, write=False)
+                problems = wd.check_result(result, property_mappings, record)
+                self.assertEqual([], problems, f"{name}: {problems}")
 
     def test_proceedings_and_event_mapping(self):
         """

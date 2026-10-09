@@ -11,23 +11,22 @@ Mapping for Wikidata allows simplified / easy creation of wikidata entries from 
 [![License](https://img.shields.io/github/license/WolfgangFahl/py_ez_wikidata.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Docs
-[Wiki](https://wiki.bitplan.com/index.php/Py_ez_wikidata)
+* [Tutorial](https://wiki.bitplan.com/index.php/Py_ez_wikidata/Tutorial) - mapping, record, dry run, author order and the worked examples
+* [Wiki](https://wiki.bitplan.com/index.php/Py_ez_wikidata) - project page and release notes
+
+## Install
+```bash
+pip install py-ez-wikidata
+```
 
 ## CLI (ezwd)
-`ezwd` creates Wikidata items from a simple YAML/JSON record via a named property
+`ezwd` creates a Wikidata item from a YAML/JSON record via a named property
 mapping. It is **dry-run by default** — add `-w` to actually write.
-
-### Search
 ```bash
-ezwd -s "Robert David"
+ezwd -m scholar --list-mappings            # the columns of a mapping
+ezwd -m scholar --example                  # the worked example embedded in the mapping
+ezwd -m scholar -r robert_david.yaml --strict   # your record as dry-run, exit 1 on problems
 ```
-
-### Inspect a mapping
-```bash
-ezwd -m scholar --list-mappings
-```
-
-### Create from a record
 `robert_david.yaml`:
 ```yaml
 label: Robert David
@@ -37,22 +36,22 @@ orcid: "0000-0002-3244-5341"
 dblp: "173/3493-1"
 linkedInId: "robert-david-39b47692"
 ```
-```bash
-# dry-run (nothing written)
-ezwd -m scholar -r robert_david.yaml
-# write to production Wikidata
-ezwd -m scholar -r robert_david.yaml -w
-```
-The example above created [Q140424194](https://www.wikidata.org/wiki/Q140424194)
-(instance of human, with ORCID, DBLP and LinkedIn). Only add an identifier once
-you have verified it belongs to this exact person — do not bulk-copy IDs from an
-author record that may aggregate homonyms.
+This record created [Q140424194](https://www.wikidata.org/wiki/Q140424194).
+Only add an identifier once you have verified it belongs to this exact person.
 
-### Endpoint selection
-```bash
-ezwd -m scholar -r robert_david.yaml --test    # target test.wikidata.org
-ezwd -m scholar -r robert_david.yaml --baseurl https://www.wikidata.org
-```
-Note: `test.wikidata.org` uses different property / item IDs than production, so a
-production-PID mapping (like `scholar`) will not validate there without a
-test-specific mapping.
+`--format turtle` prints the built item as RDF in the Wikidata model,
+`-s "Robert David"` searches Wikidata before you create, `--test` targets
+test.wikidata.org.
+
+## Bundled mappings
+| name | creates | example |
+|---|---|---|
+| `scholar` | human ([Q5](https://www.wikidata.org/wiki/Q5)) with scholarly identifiers | [Q140424194](https://www.wikidata.org/wiki/Q140424194) |
+| `paper` | scholarly article ([Q13442814](https://www.wikidata.org/wiki/Q13442814)), authors in their order | [Q141609355](https://www.wikidata.org/wiki/Q141609355) |
+| `proceedings` | CEUR-WS proceedings volume ([Q1143604](https://www.wikidata.org/wiki/Q1143604)) | [Q141623730](https://www.wikidata.org/wiki/Q141623730) |
+| `event` | event of a CEUR-WS volume, class from the record | [Q141623731](https://www.wikidata.org/wiki/Q141623731) |
+| `extension` | MediaWiki extension ([Q6805426](https://www.wikidata.org/wiki/Q6805426)) | [Q140770649](https://www.wikidata.org/wiki/Q140770649) |
+
+Every mapping file carries the record of its example in its header, how this
+works and all five examples are in the
+[tutorial](https://wiki.bitplan.com/index.php/Py_ez_wikidata/Tutorial/Examples).

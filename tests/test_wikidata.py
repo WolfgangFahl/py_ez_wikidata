@@ -8,6 +8,7 @@ from datetime import datetime
 
 import requests
 from lodstorage.lod import LOD
+from rdflib import URIRef
 from wikibaseintegrator import wbi_helpers
 from wikibaseintegrator.datatypes import (
     URL,
@@ -320,6 +321,41 @@ class TestWikidata(BaseTest):
         self.assertNotIn("maxlag", read_data)
         self.assertEqual("wbeditentity", write_data["action"])
         self.assertEqual(5, write_data["maxlag"])
+
+    def test_item_to_graph(self):
+        """
+        test the RDF graph of a dry run result in the Wikidata model - see issue #8
+        """
+        authors = [
+            "Q115164606",
+            "Q55685947",
+            "Q56448921",
+            "Q110462723",
+            "Q57169981",
+            "Q30276490",
+        ]
+        record = {
+            "label": "Persistent Identification for Conferences",
+            "title": "Persistent Identification for Conferences",
+            "author": authors,
+        }
+        property_mappings = list(PropertyMappings.of_name("paper").mappings.values())
+        result = self.wd.add_record(record, property_mappings, write=False)
+        graph = self.wd.item_to_graph(result.item)
+        p_author = URIRef("http://www.wikidata.org/prop/P50")
+        ps_author = URIRef("http://www.wikidata.org/prop/statement/P50")
+        pq_ordinal = URIRef("http://www.wikidata.org/prop/qualifier/P1545")
+        statements = list(graph.objects(None, p_author))
+        self.assertEqual(6, len(statements))
+        ordinals = {}
+        for statement in statements:
+            author = graph.value(statement, ps_author)
+            ordinal = graph.value(statement, pq_ordinal)
+            ordinals[str(author).split("/")[-1]] = str(ordinal)
+        expected = {author: str(index + 1) for index, author in enumerate(authors)}
+        self.assertEqual(expected, ordinals)
+        turtle = self.wd.as_rdf(result, "turtle")
+        self.assertIn("wd:Qnew", turtle)
 
     def test_get_record_list_index_order(self):
         """

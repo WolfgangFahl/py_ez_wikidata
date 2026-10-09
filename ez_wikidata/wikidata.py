@@ -20,6 +20,8 @@ import dateutil.parser
 from lodstorage.prefixes import Prefixes
 from lodstorage.query import Endpoint
 from lodstorage.sparql import SPARQL
+from rdflib import Graph, Literal, Namespace, URIRef
+from rdflib.namespace import RDFS, XSD
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -680,6 +682,116 @@ class Wikidata:
                         lines.append(f"    {qpid} {q_name}: {q_value}")
         explanation = "\n".join(lines)
         return explanation
+
+    def item_to_graph(
+        self, item: ItemEntity, subject_id: str = "Qnew", lang: str = "en"
+    ) -> Graph:
+        """
+        convert the given item to an RDF graph in the Wikidata model: wd: for
+        the item, p:/ps: for the statements, pq: for the qualifiers and wdt:
+        for the truthy values - see issue #8
+
+        Args:
+            item(ItemEntity): the item to convert, e.g. the built item of a dry run
+            subject_id(str): the id to use for an item without id
+            lang(str): the language of label and description
+
+        Returns:
+            Graph: the RDF graph
+        """
+        wd = Namespace("http://www.wikidata.org/entity/")
+        wds = Namespace("http://www.wikidata.org/entity/statement/")
+        wdt = Namespace("http://www.wikidata.org/prop/direct/")
+        p = Namespace("http://www.wikidata.org/prop/")
+        ps = Namespace("http://www.wikidata.org/prop/statement/")
+        pq = Namespace("http://www.wikidata.org/prop/qualifier/")
+        schema = Namespace("http://schema.org/")
+        graph = Graph()
+        for prefix, namespace in [
+            ("wd", wd),
+            ("wds", wds),
+            ("wdt", wdt),
+            ("p", p),
+            ("ps", ps),
+            ("pq", pq),
+            ("schema", schema),
+        ]:
+            graph.bind(prefix, namespace)
+        item_id = item.id if item.id else subject_id
+        subject = wd[item_id]
+        label = item.labels.get(lang)
+        if label:
+            graph.add((subject, RDFS.label, Literal(label.value, lang=lang)))
+        description = item.descriptions.get(lang)
+        if description:
+            graph.add(
+                (subject, schema.description, Literal(description.value, lang=lang))
+            )
+        for index, claim in enumerate(item.claims):
+            pid = claim.mainsnak.property_number
+            value = self._snak_to_rdf(claim.mainsnak, wd)
+            if value is None:
+                continue
+            statement = wds[f"{item_id}-{index + 1}"]
+            graph.add((subject, wdt[pid], value))
+            graph.add((subject, p[pid], statement))
+            graph.add((statement, ps[pid], value))
+            for qpid, qualifiers in claim.qualifiers.qualifiers.items():
+                for qualifier in qualifiers:
+                    qvalue = self._snak_to_rdf(qualifier, wd)
+                    if qvalue is not None:
+                        graph.add((statement, pq[qpid], qvalue))
+        return graph
+
+    def _snak_to_rdf(self, snak: Snak, wd: Namespace):
+        """
+        convert the value of the given snak to an RDF term
+
+        Args:
+            snak(Snak): the snak
+            wd(Namespace): the wd namespace for item values
+
+        Returns:
+            the URIRef or Literal, None if the snak has no value
+        """
+        term = None
+        datavalue = snak.datavalue
+        if datavalue:
+            value = datavalue.get("value")
+            datatype = snak.datatype
+            if datatype == "wikibase-item":
+                term = wd[value["id"]]
+            elif datatype == "monolingualtext":
+                term = Literal(value["text"], lang=value["language"])
+            elif datatype == "time":
+                term = Literal(value["time"].lstrip("+"), datatype=XSD.dateTime)
+            elif datatype == "url":
+                term = URIRef(value)
+            elif datatype == "quantity":
+                term = Literal(value["amount"].lstrip("+"), datatype=XSD.decimal)
+            else:
+                term = Literal(value)
+        return term
+
+    def as_rdf(
+        self, result: WikidataResult, rdf_format: str = "turtle", lang: str = "en"
+    ) -> str:
+        """
+        serialize the item of the given result as RDF
+
+        Args:
+            result(WikidataResult): the result whose item to serialize
+            rdf_format(str): an rdflib serialization format
+            lang(str): the language of label and description
+
+        Returns:
+            str: the serialized graph, empty if the result has no item
+        """
+        rdf = ""
+        if result.item is not None:
+            graph = self.item_to_graph(result.item, lang=lang)
+            rdf = graph.serialize(format=rdf_format)
+        return rdf
 
     def check_result(
         self,

@@ -2,8 +2,7 @@
 # Wikidata property mappings for MediaWiki extensions for py_ez_wikidata
 # creates a MediaWiki extension https://www.wikidata.org/wiki/Q6805426 with source code repository, issue tracker,
 # developer, license and homepage; the fixed-value qualifiers satisfy the required-qualifier
-# constraints of P1324 and P856; columns match https://media.bitplan.com/index.php/Concept:Extension
-# used per https://media.bitplan.com/index.php/Extensions
+# constraints of P1324 and P856; columns match https://contexts.bitplan.com/index.php/Concept:Extension
 # tutorial: https://wiki.bitplan.com/index.php/Py_ez_wikidata/Tutorial/Examples#extension
 # example: https://www.wikidata.org/wiki/Q140770649 was created 2026-07-30 for https://github.com/BITPlan/ImageLink from this record:
 # ```yaml
@@ -74,4 +73,4 @@ mappings:
     value: Q1860
 description: MediaWiki extension property mappings (P31=Q6805426); columns match
   Template:Extension
-url: https://media.bitplan.com/index.php/Concept:Extension
+url: https://contexts.bitplan.com/index.php/Concept:Extension

@@ -4,6 +4,9 @@ Created on 2023-01-14
 @author: wf
 """
 
+import os
+
+from ez_wikidata import wdproperty
 from ez_wikidata.wdproperty import (
     PropertyMapping,
     PropertyMappings,
@@ -201,6 +204,18 @@ class TestPropertyMapping(BaseTest):
                 result = wd.add_record(record, property_mappings, write=False)
                 problems = wd.check_result(result, property_mappings, record)
                 self.assertEqual([], problems, f"{name}: {problems}")
+
+    def test_no_intranet_links(self):
+        """
+        test that no bundled resource references the intranet wiki - public
+        packages carry public links only
+        """
+        resource_dir = os.path.join(os.path.dirname(wdproperty.__file__), "resources")
+        for file_name in sorted(os.listdir(resource_dir)):
+            with self.subTest(resource=file_name):
+                with open(os.path.join(resource_dir, file_name)) as resource_file:
+                    content = resource_file.read()
+                self.assertNotIn("media.bitplan.com", content)
 
     def test_proceedings_and_event_mapping(self):
         """

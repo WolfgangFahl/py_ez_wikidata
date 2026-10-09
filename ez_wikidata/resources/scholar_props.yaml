@@ -1,8 +1,8 @@
 # WF 2026-06-26
 # Wikidata property mappings for scholars for py_ez_wikidata
 # creates a human https://www.wikidata.org/wiki/Q5 with scholarly identifiers; columns match
-# https://media.bitplan.com/index.php/Template:Scholar
-# used by ezwd per https://media.bitplan.com/index.php/ActionPage/CreateWikidataItem
+# https://cr.bitplan.com/index.php/Template:Scholar
+# used by ezwd, procedure: https://wiki.bitplan.com/index.php/Py_ez_wikidata/Tutorial/Record
 # and read back by scholarsync of https://github.com/WolfgangFahl/pySMWSync
 # see https://github.com/WolfgangFahl/py_ez_wikidata/issues/10 and https://github.com/WolfgangFahl/py_ez_wikidata/issues/12
 # tutorial: https://wiki.bitplan.com/index.php/Py_ez_wikidata/Tutorial/Examples#scholar
@@ -73,4 +73,4 @@ mappings:
     propertyType: entity_schema
 description: Scholar property mappings (Wikidata human + scholarly identifiers); columns
   match Template:Scholar
-url: https://media.bitplan.com/index.php/Concept:Scholar
+url: https://cr.bitplan.com/index.php/Concept:Scholar

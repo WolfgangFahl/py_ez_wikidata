@@ -1,0 +1,23 @@
+# WF 2026-10-25
+# Wikibase targets for py_ez_wikidata - see https://github.com/WolfgangFahl/py_ez_wikidata/issues/20
+# the bundled mappings carry Wikidata ids; a target with translate: true gets them
+# translated via its table resources/targets/<name>.yaml
+# concept_uri is the base of the RDF namespaces as given by Special:EntityData/<id>.ttl
+targets:
+  wikidata:
+    name: wikidata
+    baseurl: https://www.wikidata.org
+    sparql_endpoint: https://query.wikidata.org/sparql
+    concept_uri: http://www.wikidata.org/
+    translate: false
+  test:
+    name: test
+    baseurl: https://test.wikidata.org
+    concept_uri: http://test.wikidata.org/
+    translate: true
+  factgrid:
+    name: factgrid
+    baseurl: https://database.factgrid.de
+    sparql_endpoint: https://database.factgrid.de/sparql
+    concept_uri: https://database.factgrid.de/
+    translate: true

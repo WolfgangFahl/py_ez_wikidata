@@ -8,13 +8,14 @@ ezwd command line interface
 
 import json
 from argparse import ArgumentParser, Namespace
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import yaml
 from basemkit.base_cmd import BaseCmd
 from sem3.lod2rdf import RDFDumper
 
 from ez_wikidata.version import Version
+from ez_wikidata.wbtarget import WikibaseTarget
 from ez_wikidata.wdproperty import PropertyMappings
 from ez_wikidata.wdsearch import WikidataSearch
 from ez_wikidata.wikidata import Wikidata
@@ -96,14 +97,43 @@ class EzWdCmd(BaseCmd):
         parser.add_argument(
             "--baseurl",
             default=Wikidata.WD_URL,
-            help="wikibase baseurl to write to (default: %(default)s)",
+            help="wikibase baseurl to write to - ids are translated if a bundled target has this baseurl (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--target",
+            help="name of the bundled Wikibase target e.g. test or factgrid - the Wikidata ids of the mapping are translated to the target's ids",
         )
         parser.add_argument(
             "--test",
             action="store_true",
-            help=f"shortcut for --baseurl {Wikidata.TEST_WD_URL}",
+            help="shortcut for --target test (https://test.wikidata.org)",
         )
         return parser
+
+    def get_target(self, args: Namespace) -> Tuple[WikibaseTarget, List[str]]:
+        """
+        get the Wikibase target from --target, --test or --baseurl
+
+        Args:
+            args(Namespace): the parsed arguments
+
+        Returns:
+            Tuple[WikibaseTarget, List[str]]: the target and the problems -
+            a baseurl without bundled target is used untranslated and reported
+        """
+        problems = []
+        if args.target:
+            target = WikibaseTarget.of_name(args.target)
+        elif args.test:
+            target = WikibaseTarget.of_name("test")
+        else:
+            target = WikibaseTarget.of_baseurl(args.baseurl)
+            if target is None:
+                target = WikibaseTarget(name=args.baseurl, baseurl=args.baseurl)
+                problems.append(
+                    f"no translation table for {args.baseurl} - the Wikidata ids of the mapping are used"
+                )
+        return target, problems
 
     def handle_args(self, args: Namespace) -> bool:
         """
@@ -118,37 +148,52 @@ class EzWdCmd(BaseCmd):
         handled = super().handle_args(args)
         if handled:
             return True
+        target, target_problems = self.get_target(args)
         if args.search:
-            self.search(args.search, args.lang, args.limit)
+            self.search(args.search, args.lang, args.limit, target.baseurl)
         elif args.mapping and args.list_mappings:
             self.list_mapping(args.mapping)
         elif args.mapping and args.example:
-            self.example(args.mapping, args.lang, args.strict, args.format)
+            self.example(
+                args.mapping,
+                args.lang,
+                args.strict,
+                args.format,
+                target,
+                target_problems,
+            )
         elif args.mapping and args.record:
-            baseurl = Wikidata.TEST_WD_URL if args.test else args.baseurl
             self.create(
                 args.mapping,
                 args.record,
                 args.lang,
                 args.write,
-                baseurl,
+                target,
                 args.strict,
                 args.format,
+                target_problems,
             )
         else:
             self.parser.print_help()
         return True
 
-    def search(self, search_for: str, lang: str, limit: int):
+    def search(
+        self,
+        search_for: str,
+        lang: str,
+        limit: int,
+        baseurl: str = Wikidata.WD_URL,
+    ):
         """
-        search Wikidata and print candidate q-id / label / description rows
+        search the Wikibase and print candidate q-id / label / description rows
 
         Args:
             search_for(str): the text to search for
             lang(str): the language to use
             limit(int): the maximum number of results
+            baseurl(str): the baseurl of the Wikibase to search
         """
-        wds = WikidataSearch(language=lang)
+        wds = WikidataSearch(language=lang, baseurl=baseurl)
         for qid, label, desc in wds.searchOptions(search_for, limit=limit):
             print(f"{qid}\t{label}\t{desc}")
 
@@ -165,17 +210,25 @@ class EzWdCmd(BaseCmd):
             print(f"  {column}\t{pm.propertyId}\t{pm.propertyType}\t{pm.propertyName}")
 
     def example(
-        self, name: str, lang: str, strict: bool = False, rdf_format: str = None
+        self,
+        name: str,
+        lang: str,
+        strict: bool = False,
+        rdf_format: str = None,
+        target: WikibaseTarget = None,
+        target_problems: List[str] = None,
     ):
         """
         print the worked example embedded in the named mapping and run it as
-        dry-run - see issue #19
+        dry-run - see issues #19 and #20
 
         Args:
             name(str): the mapping name (e.g. paper)
             lang(str): the language to use
             strict(bool): if True set exit code 1 when the result has problems
             rdf_format(str): if given also print the built item as RDF
+            target(WikibaseTarget): the Wikibase target (default: Wikidata)
+            target_problems(List[str]): problems found when choosing the target
         """
         mappings = PropertyMappings.of_name(name)
         item_id, record = mappings.get_example()
@@ -187,7 +240,14 @@ class EzWdCmd(BaseCmd):
             print(yaml.safe_dump(record, sort_keys=False, allow_unicode=True), end="")
             print("# dry-run:")
             self.create_from_record(
-                mappings, record, lang, False, None, strict, rdf_format
+                mappings,
+                record,
+                lang,
+                False,
+                target,
+                strict,
+                rdf_format,
+                target_problems,
             )
 
     def load_record(self, record_path: str) -> dict:
@@ -213,9 +273,10 @@ class EzWdCmd(BaseCmd):
         record_path: str,
         lang: str,
         write: bool,
-        baseurl: str = None,
+        target: WikibaseTarget = None,
         strict: bool = False,
         rdf_format: str = None,
+        target_problems: List[str] = None,
     ):
         """
         create (or dry-run) a Wikidata item from the given record file using
@@ -226,15 +287,23 @@ class EzWdCmd(BaseCmd):
             record_path(str): path to the YAML/JSON record file
             lang(str): the language to use
             write(bool): if True actually write to Wikidata
-            baseurl(str): the wikibase baseurl to write to (defaults to
-                production Wikidata)
+            target(WikibaseTarget): the Wikibase target to write to (defaults
+                to production Wikidata)
             strict(bool): if True set exit code 1 when the result has problems
             rdf_format(str): if given also print the built item as RDF
+            target_problems(List[str]): problems found when choosing the target
         """
         mappings = PropertyMappings.of_name(name)
         record = self.load_record(record_path)
         self.create_from_record(
-            mappings, record, lang, write, baseurl, strict, rdf_format
+            mappings,
+            record,
+            lang,
+            write,
+            target,
+            strict,
+            rdf_format,
+            target_problems,
         )
 
     def create_from_record(
@@ -243,29 +312,37 @@ class EzWdCmd(BaseCmd):
         record: dict,
         lang: str,
         write: bool,
-        baseurl: str = None,
+        target: WikibaseTarget = None,
         strict: bool = False,
         rdf_format: str = None,
+        target_problems: List[str] = None,
     ):
         """
         create (or dry-run) a Wikidata item from the given record using the
-        given property mappings
+        given property mappings, translated to the ids of the target
 
         Args:
             mappings(PropertyMappings): the property mappings
             record(dict): the record
             lang(str): the language to use
             write(bool): if True actually write to Wikidata
-            baseurl(str): the wikibase baseurl to write to
+            target(WikibaseTarget): the Wikibase target to write to
             strict(bool): if True set exit code 1 when the result has problems
             rdf_format(str): if given also print the built item as RDF
+            target_problems(List[str]): problems found when choosing the target
         """
-        property_mappings = list(mappings.mappings.values())
-        wd = Wikidata(baseurl=baseurl)
+        if target is None:
+            target = WikibaseTarget.of_name("wikidata")
+        problems = list(target_problems or [])
+        property_mappings, record, translation_problems = target.translate_mappings(
+            list(mappings.mappings.values()), record
+        )
+        problems.extend(translation_problems)
+        wd = Wikidata(target=target)
         if write:
             wd.loginWithCredentials()
         result = wd.add_record(record, property_mappings, lang=lang, write=write)
-        problems = wd.check_result(result, property_mappings, record)
+        problems.extend(wd.check_result(result, property_mappings, record))
         for problem in problems:
             print(problem)
         if strict and problems:

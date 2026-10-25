@@ -43,6 +43,23 @@ Only add an identifier once you have verified it belongs to this exact person.
 `-s "Robert David"` searches Wikidata before you create, `--test` targets
 test.wikidata.org.
 
+## Other Wikibases
+The mappings carry Wikidata ids. Another Wikibase has its own ids, so
+`--target` translates them with the target's table in
+`ez_wikidata/resources/targets/<name>.yaml`; the targets are listed in
+`ez_wikidata/resources/wikibases.yaml`.
+```bash
+ezwd -m scholar --example --test                # test.wikidata.org: P31→P82, Q5→Q497
+ezwd -m scholar --example --target factgrid     # FactGrid: P31→P2, P496→P408, Q5→Q7
+ezwd -s "Human" --target factgrid               # search the target, not Wikidata
+```
+A property without id on the target is reported and its column skipped, e.g.
+`no id for P2456 (DBLP author ID) on factgrid - dblp is skipped`; `--strict`
+turns this into exit code 1. The FactGrid table is derived from FactGrid's
+P343 (Wikidata property). `--baseurl` translates only if a bundled target has
+that baseurl, otherwise it reports that the Wikidata ids are used.
+See [issue #20](https://github.com/WolfgangFahl/py_ez_wikidata/issues/20).
+
 ## Bundled mappings
 | name | creates | example |
 |---|---|---|

@@ -211,11 +211,13 @@ class TestPropertyMapping(BaseTest):
         packages carry public links only
         """
         resource_dir = os.path.join(os.path.dirname(wdproperty.__file__), "resources")
-        for file_name in sorted(os.listdir(resource_dir)):
-            with self.subTest(resource=file_name):
-                with open(os.path.join(resource_dir, file_name)) as resource_file:
-                    content = resource_file.read()
-                self.assertNotIn("media.bitplan.com", content)
+        for dir_path, _dir_names, file_names in os.walk(resource_dir):
+            for file_name in sorted(file_names):
+                path = os.path.join(dir_path, file_name)
+                with self.subTest(resource=os.path.relpath(path, resource_dir)):
+                    with open(path) as resource_file:
+                        content = resource_file.read()
+                    self.assertNotIn("media.bitplan.com", content)
 
     def test_proceedings_and_event_mapping(self):
         """

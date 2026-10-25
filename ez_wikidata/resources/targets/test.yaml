@@ -1,0 +1,26 @@
+# WF 2026-10-25
+# Wikidata id -> test.wikidata.org id - see https://github.com/WolfgangFahl/py_ez_wikidata/issues/20
+# test.wikidata.org is a sandbox: no property carries P676 (Wikidata item/property) for these ids
+# and labels have duplicates - picked by exact label, datatype and description via wbsearchentities
+# no exact match for P227 (GND ID), P1960, P2038, P2456 and P6634
+name: test
+source: wbsearchentities exact label match
+ids:
+  P31:
+    id: P82
+    label: instance of
+  P106:
+    id: P204
+    label: occupation
+  P496:
+    id: P98119
+    label: "P496: ORCID iD"
+  P856:
+    id: P206
+    label: official website
+  P12861:
+    id: P97725
+    label: EntitySchema for this class
+  Q5:
+    id: Q497
+    label: human

@@ -42,6 +42,7 @@ from wikibaseintegrator.wbi_config import config as wbi_config
 from wikibaseintegrator.wbi_enums import WikibaseRank, WikibaseTimePrecision
 
 from ez_wikidata.version import Version
+from ez_wikidata.wbtarget import WikibaseTarget
 from ez_wikidata.wdproperty import (
     PropertyMapping,
     PropertyMappings,
@@ -123,6 +124,7 @@ class Wikidata:
         wpm: WikidataPropertyManager = None,
         debug: bool = False,
         endpointConf: Endpoint = None,
+        target: WikibaseTarget = None,
     ):
         """
         Constructor
@@ -133,7 +135,12 @@ class Wikidata:
             wpm(WikidataPropertymanager):
             endpointConf(Endpoint): the SPARQL endpoint to use for read queries
                 (defaults to the Wikidata Query Service)
+            target(WikibaseTarget): the Wikibase target for property labels and
+                RDF namespaces - see issue #20
         """
+        self.target = target
+        if baseurl is None and target is not None:
+            baseurl = target.baseurl
         if baseurl is None:
             baseurl = self.WD_URL
         self.baseurl = baseurl
@@ -662,19 +669,16 @@ class Wikidata:
             description = item.descriptions.get(lang)
             lines.append(f"label: {label.value if label else ''}")
             lines.append(f"description: {description.value if description else ''}")
-            wpm = WikidataPropertyManager.get_instance()
             for claim in item.claims:
                 mainsnak = claim.mainsnak
                 pid = mainsnak.property_number
-                wd_property = wpm.get_property_by_id(pid)
-                property_name = wd_property.plabel if wd_property else "?"
+                property_name = self.get_property_label(pid)
                 value = mainsnak.datavalue.get("value")
                 if isinstance(value, dict):
                     value = value.get("id", value)
                 lines.append(f"  {pid} {property_name}: {value}")
                 for qpid, qualifiers in claim.qualifiers.qualifiers.items():
-                    q_property = wpm.get_property_by_id(qpid)
-                    q_name = q_property.plabel if q_property else "?"
+                    q_name = self.get_property_label(qpid)
                     for qualifier in qualifiers:
                         q_value = qualifier.datavalue.get("value")
                         if isinstance(q_value, dict):
@@ -682,6 +686,27 @@ class Wikidata:
                         lines.append(f"    {qpid} {q_name}: {q_value}")
         explanation = "\n".join(lines)
         return explanation
+
+    def get_property_label(self, pid: str) -> str:
+        """
+        get the label of the given property id - from the translation table
+        of a translating target, else from the Wikidata properties
+
+        Args:
+            pid(str): the property id
+
+        Returns:
+            str: the label or ? if not known
+        """
+        label = None
+        if self.target is not None and self.target.translate:
+            label = self.target.get_label(pid)
+        else:
+            wd_property = WikidataPropertyManager.get_instance().get_property_by_id(pid)
+            label = wd_property.plabel if wd_property else None
+        if label is None:
+            label = "?"
+        return label
 
     def item_to_graph(
         self, item: ItemEntity, subject_id: str = "Qnew", lang: str = "en"
@@ -699,12 +724,15 @@ class Wikidata:
         Returns:
             Graph: the RDF graph
         """
-        wd = Namespace("http://www.wikidata.org/entity/")
-        wds = Namespace("http://www.wikidata.org/entity/statement/")
-        wdt = Namespace("http://www.wikidata.org/prop/direct/")
-        p = Namespace("http://www.wikidata.org/prop/")
-        ps = Namespace("http://www.wikidata.org/prop/statement/")
-        pq = Namespace("http://www.wikidata.org/prop/qualifier/")
+        concept_uri = "http://www.wikidata.org/"
+        if self.target is not None and self.target.concept_uri:
+            concept_uri = self.target.concept_uri
+        wd = Namespace(f"{concept_uri}entity/")
+        wds = Namespace(f"{concept_uri}entity/statement/")
+        wdt = Namespace(f"{concept_uri}prop/direct/")
+        p = Namespace(f"{concept_uri}prop/")
+        ps = Namespace(f"{concept_uri}prop/statement/")
+        pq = Namespace(f"{concept_uri}prop/qualifier/")
         schema = Namespace("http://schema.org/")
         graph = Graph()
         for prefix, namespace in [
@@ -1086,9 +1114,7 @@ class Wikidata:
             WHERE {
               wd:%s wikibase:propertyType ?o.
             }
-        """ % (
-            property_id
-        )
+        """ % (property_id)
         itemRows = self.query_sparql.queryAsListOfDicts(query)
         wikibase_prefix = "http://wikiba.se/ontology#"
         types = []

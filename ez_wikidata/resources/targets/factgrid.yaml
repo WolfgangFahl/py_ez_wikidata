@@ -1,0 +1,35 @@
+# WF 2026-10-25
+# Wikidata id -> FactGrid id - see https://github.com/WolfgangFahl/py_ez_wikidata/issues/20
+# properties derived from FactGrid P343 (Wikidata property) via https://database.factgrid.de/sparql
+# no FactGrid property carries P343 P2456 (DBLP author ID) or P12861 (EntitySchema for this class)
+# Q5 -> Q7 Human (natural person) by label
+name: factgrid
+source: FactGrid P343 Wikidata property
+ids:
+  P31:
+    id: P2
+    label: Instance of
+  P106:
+    id: P165
+    label: Career statement
+  P227:
+    id: P76
+    label: GND ID
+  P496:
+    id: P408
+    label: ORCID ID
+  P856:
+    id: P156
+    label: Official website
+  P1960:
+    id: P1354
+    label: Google Scholar author ID
+  P2038:
+    id: P712
+    label: ResearchGate profile ID
+  P6634:
+    id: P709
+    label: LinkedIn personal profile ID
+  Q5:
+    id: Q7
+    label: Human

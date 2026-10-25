@@ -23,7 +23,12 @@ class WikidataSearch(object):
     not on search-as-you-type.
     """
 
-    def __init__(self, language: str = "en", timeout: float = 2.0):
+    def __init__(
+        self,
+        language: str = "en",
+        timeout: float = 2.0,
+        baseurl: str = "https://www.wikidata.org",
+    ):
         """
         Constructor
 
@@ -31,9 +36,11 @@ class WikidataSearch(object):
             language(str): the language to use e.g. en/fr
             timeout(float): maximum time to wait for result - kept short so
                 interactive search fails fast rather than blocking the UI
+            baseurl(str): the baseurl of the Wikibase to search - see issue #20
         """
         self.language = language
         self.timeout = timeout
+        self.baseurl = baseurl
         self.logger = logging.getLogger(__name__)
 
     @classmethod
@@ -102,7 +109,7 @@ class WikidataSearch(object):
         """
         searchResult = {}
         try:
-            apiurl = f"https://www.wikidata.org/w/api.php?action=wbsearchentities&language={self.language}&uselang={self.language}&format=json&limit={limit}&search="
+            apiurl = f"{self.baseurl}/w/api.php?action=wbsearchentities&language={self.language}&uselang={self.language}&format=json&limit={limit}&search="
             searchEncoded = urllib.parse.quote_plus(searchFor)
             apisearch = apiurl + searchEncoded
             rawSearchResult = self.make_wikidata_request(apisearch)
